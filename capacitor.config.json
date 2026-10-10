@@ -1,0 +1,8 @@
+{
+  "appId": "com.fastonmed.crm",
+  "appName": "FastonMed CRM",
+  "webDir": "www",
+  "backgroundColor": "#f8fafc",
+  "ios": { "contentInset": "automatic" },
+  "android": { "backgroundColor": "#f8fafc" }
+}

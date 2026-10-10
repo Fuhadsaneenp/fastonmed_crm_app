@@ -1,0 +1,10 @@
+import { readFile, writeFile } from 'node:fs/promises';
+const input = process.env.CRM_MOBILE_URL;
+if (!input) throw new Error('Set CRM_MOBILE_URL to your deployed HTTPS CRM URL.');
+const url = new URL(input);
+if (url.protocol !== 'https:' || url.username || url.password) throw new Error('CRM_MOBILE_URL must use HTTPS and contain no credentials.');
+const config = JSON.parse(await readFile(new URL('../capacitor.config.json', import.meta.url), 'utf8'));
+config.server = { url: url.href, errorPath: 'offline.html' };
+await writeFile(new URL('../capacitor.config.json', import.meta.url), JSON.stringify(config, null, 2) + '\n');
+await writeFile(new URL('../www/server.json', import.meta.url), JSON.stringify({ url: url.href }));
+console.log('Mobile apps configured for ' + url.origin);

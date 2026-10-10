@@ -1,0 +1,15 @@
+node_modules/
+www/server.json
+android/.gradle/
+android/local.properties
+android/**/build/
+ios/App/build/
+*.jks
+*.keystore
+.env*
+
+.DS_Store
+.idea/
+**/xcuserdata/
+*.apk
+*.aab

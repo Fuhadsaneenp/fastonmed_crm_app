@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FastonMed CRM</string>
+    <string name="title_activity_main">FastonMed CRM</string>
+    <string name="package_name">com.fastonmed.crm</string>
+    <string name="custom_url_scheme">com.fastonmed.crm</string>
+</resources>
