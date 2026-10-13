@@ -3,7 +3,7 @@
   "appName": "FastonMed CRM",
   "webDir": "www",
   "backgroundColor": "#f8fafc",
-  "zoomEnabled": true,
+  "zoomEnabled": false,
   "loggingBehavior": "debug",
   "server": {
     "url": "https://crm.fastonmed.com",
@@ -15,7 +15,7 @@
     "allowMixedContent": false
   },
   "ios": {
-    "contentInset": "automatic",
+    "contentInset": "never",
     "backgroundColor": "#f8fafc"
   }
 }

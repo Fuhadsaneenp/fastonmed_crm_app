@@ -992,3 +992,27 @@ body:has(.crm-app-shell) .client-form-overlay[data-mobile-overlay="true"]>.clien
 .app-home .app-section-title{margin:22px 0 11px!important}
 .app-home .app-section-title h2{font-size:18px!important}
 }
+
+/* iPhone layout: CSS owns safe areas; the native webview adds no second inset. */
+@media (max-width: 767px) {
+  body:has(.crm-app-shell) { width: 100%; height: 100%; overflow: hidden; }
+  .crm-app-shell { height: 100dvh !important; padding-top: env(safe-area-inset-top, 0px); box-sizing: border-box; background: #fff !important; }
+  .crm-app-shell > div:last-child { min-height: 0; }
+  .crm-app-shell .crm-header { flex: 0 0 56px; height: 56px !important; min-height: 56px !important; padding: 0 16px !important; }
+  .crm-header .app-brand-title { max-width: 144px; }
+  .crm-header .app-brand-title img { width: 140px !important; }
+  .crm-app-shell .crm-main { min-height: 0; padding: 16px 16px 24px !important; -webkit-overflow-scrolling: touch; }
+  .app-welcome { margin-bottom: 20px; }
+  .app-welcome h1 { font-size: 28px; line-height: 1.2; letter-spacing: -.8px; }
+  .app-welcome h1 span { font-size: 13px; margin-top: 6px; }
+  .app-focus-card { border-radius: 20px; padding: 18px 20px; box-shadow: 0 6px 16px #003c4e10; }
+  .app-focus-number { font-size: 40px; margin: 14px 0; }
+  .app-focus-number > span { font-size: 12px; line-height: 1.5; }
+  .app-focus-bottom { padding-top: 12px; gap: 8px; font-size: 10px; }
+  .app-quick-actions { margin: 20px 0 24px; gap: 8px; }
+  .app-quick-actions a > span { width: 48px; height: 48px; border-radius: 16px; }
+  .app-quick-actions a { min-height: 72px; }
+  .crm-app-shell .crm-mobile-nav.app-tabbar { flex: 0 0 auto; min-height: 64px; padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); background: #fff !important; }
+  .crm-mobile-nav.app-tabbar a, .crm-mobile-nav.app-tabbar button { min-height: 48px; border-radius: 14px; }
+  body:has(.crm-app-shell) { --app-header-space: calc(56px + env(safe-area-inset-top, 0px)); --app-footer-space: calc(60px + env(safe-area-inset-bottom, 0px)); }
+}
