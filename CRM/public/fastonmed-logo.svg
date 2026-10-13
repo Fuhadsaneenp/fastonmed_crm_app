@@ -1,0 +1,24 @@
+<svg width="240" height="70" viewBox="0 0 240 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Center Head Dot -->
+  <circle cx="42" cy="18" r="8" fill="#42B69C" />
+
+  <!-- Left Wing -->
+  <g>
+    <rect x="7" y="27" width="28" height="9.5" rx="4.75" transform="rotate(-24 21 32)" fill="#42B69C" />
+    <rect x="12" y="44" width="26" height="9.5" rx="4.75" transform="rotate(-24 25 49)" fill="#42B69C" />
+    <rect x="18" y="60" width="22" height="9.5" rx="4.75" transform="rotate(-24 29 65)" fill="#42B69C" />
+  </g>
+
+  <!-- Right Wing (Mirrored) -->
+  <g transform="translate(84, 0) scale(-1, 1)">
+    <rect x="7" y="27" width="28" height="9.5" rx="4.75" transform="rotate(-24 21 32)" fill="#42B69C" />
+    <rect x="12" y="44" width="26" height="9.5" rx="4.75" transform="rotate(-24 25 49)" fill="#42B69C" />
+    <rect x="18" y="60" width="22" height="9.5" rx="4.75" transform="rotate(-24 29 65)" fill="#42B69C" />
+  </g>
+
+  <!-- Wordmark "Faston" -->
+  <text x="88" y="49" font-family="Inter, system-ui, sans-serif" font-weight="800" font-size="34" fill="#004D66" letter-spacing="-1.5">Faston</text>
+
+  <!-- Wordmark "med" -->
+  <text x="182" y="49" font-family="Inter, system-ui, sans-serif" font-weight="300" font-size="34" fill="#42B69C" letter-spacing="-0.5">med</text>
+</svg>

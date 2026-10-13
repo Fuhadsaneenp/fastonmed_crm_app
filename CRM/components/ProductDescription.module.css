@@ -1,0 +1,12 @@
+.description { color: #334155; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; min-width: 0; max-width: 100%; white-space: pre-line; }
+.description p { margin: 0 0 12px; }
+.description h1, .description h2, .description h3, .description h4 { color: #0f172a; font-weight: 700; font-size: 16px; line-height: 1.4; margin: 22px 0 10px; }
+.description ul, .description ol { margin: 0 0 16px; padding-left: 22px; }
+.description ul { list-style: disc; }
+.description ol { list-style: decimal; }
+.description li { margin: 6px 0; }
+.description img { max-width: 100%; height: auto; }
+.description table { display: block; overflow-x: auto; max-width: 100%; border-collapse: collapse; }
+.description th, .description td { border: 1px solid #e2e8f0; padding: 8px 12px; }
+.description a { color: #007f70; text-decoration: underline; }
+.description blockquote { border-left: 3px solid #53af96; margin: 12px 0; padding-left: 16px; }

@@ -1,0 +1,21 @@
+{
+  "appId": "com.fastonmed.crm",
+  "appName": "FastonMed CRM",
+  "webDir": "www",
+  "backgroundColor": "#f8fafc",
+  "zoomEnabled": true,
+  "loggingBehavior": "debug",
+  "server": {
+    "url": "https://crm.fastonmed.com",
+    "cleartext": false,
+    "errorPath": "offline.html"
+  },
+  "android": {
+    "backgroundColor": "#f8fafc",
+    "allowMixedContent": false
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "backgroundColor": "#f8fafc"
+  }
+}

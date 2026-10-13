@@ -1,0 +1,83 @@
+/* Phone presentation hooks; desktop layout remains defined by each screen. */
+@media screen and (max-width: 767px) {
+  .crm-sidebar-desktop { display: none !important; }
+  .crm-sidebar-mobile { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); width: min(300px, 85vw) !important; min-width: 0 !important; }
+  body { -webkit-text-size-adjust: 100%; }
+  .crm-main { padding: 16px 12px !important; scroll-padding-block: 16px; }
+  .crm-main div[style*="justify-content: space-between"] { flex-wrap: wrap; gap: 8px; }
+  .crm-main div[style*="overflow-x: auto"] { max-width: 100%; }
+  .crm-main > * { min-width: 0; max-width: 100%; }
+  [data-mobile-grid="stack"], .form-grid.two, .form-grid.three, .form-grid.four { grid-template-columns: minmax(0, 1fr) !important; }
+  [data-mobile-grid="metrics"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  [data-mobile-grid] > * { min-width: 0; }
+  .crm-main button, [data-mobile-overlay] button, [role="dialog"] button { min-height: 44px; }
+  .crm-main input:not([type="checkbox"]):not([type="radio"]), .crm-main select,
+  [data-mobile-overlay] input:not([type="checkbox"]):not([type="radio"]), [data-mobile-overlay] select { min-height: 44px; max-width: 100%; }
+  .crm-main textarea, [data-mobile-overlay] textarea { min-height: 100px; max-width: 100%; }
+  .crm-main .card { border-radius: 16px; }
+  .crm-main .table-container:has(> table[data-mobile-cards]) { overflow: visible !important; min-height: 0 !important; }
+  table[data-mobile-cards], table[data-mobile-cards] > tbody { display: block; width: 100% !important; min-width: 0 !important; }
+  table[data-mobile-cards] > thead { display: none; }
+  table[data-mobile-cards] > tbody { padding: 8px; }
+  table[data-mobile-cards] > tbody > tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 16px; margin-bottom: 12px; gap: 12px; background: #fff; border: 1px solid var(--border); border-radius: 16px; }
+  table[data-mobile-cards] > tbody > tr > td { display: block; width: auto !important; min-width: 0 !important; max-width: 100% !important; padding: 0 !important; border: 0 !important; white-space: normal !important; text-align: left !important; overflow-wrap: anywhere; position: relative !important; left: auto !important; right: auto !important; }
+  table[data-mobile-cards] > tbody > tr > td:first-child, table[data-mobile-cards] > tbody > tr > td:last-child, table[data-mobile-cards] td[data-label="REQUIREMENT"], table[data-mobile-cards] td[data-label="ORGANISATION"] { grid-column: 1 / -1; }
+  table[data-mobile-cards] td[data-label]:not(:first-child)::before { content: attr(data-label); display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
+  table[data-mobile-cards] > tbody > tr > td:first-child { padding-bottom: 12px !important; border-bottom: 1px solid #f1f5f9 !important; }
+  table[data-mobile-cards] td > div { min-width: 0 !important; max-width: 100%; }
+  table[data-mobile-cards] td .badge { white-space: normal; }
+  table[data-mobile-cards] td button { min-width: 44px; }
+  [data-mobile-overlay="true"]:not([data-state]) { padding: 12px !important; align-items: center !important; }
+  [data-mobile-overlay="true"] > div { width: 100% !important; min-width: 0 !important; max-width: 100% !important; max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important; overflow-y: auto; border-radius: 16px !important; }
+  [role="dialog"] { max-width: calc(100vw - 24px) !important; max-height: calc(100dvh - 24px) !important; overflow-y: auto; }
+  .employee-form-overlay { padding: 12px; }
+  .employee-form-shell { width: 100%; max-height: calc(100dvh - 24px); }
+  .employee-form-footer { flex-wrap: wrap; }
+  .employee-form-footer > div { width: 100%; }
+  .employee-form-footer button { flex: 1; }
+  .salary-header, .salary-row { gap: 8px; padding: 12px; grid-template-columns: 1fr 1fr; }
+  .salary-total { gap: 12px; margin: 8px; padding: 12px; }
+  .photo-upload-section { grid-template-columns: minmax(0, 1fr); }
+  .profile-left-col, .content-card-box { padding: 16px; }
+  .crm-directory-pagination { padding: 12px !important; }
+  .crm-directory-pagination > div { width: 100%; justify-content: space-between; gap: 8px !important; }
+  .crm-notifications { position: fixed !important; top: calc(72px + env(safe-area-inset-top)) !important; left: 12px; right: 12px !important; width: auto !important; max-height: calc(100dvh - 160px); overflow-y: auto; }
+  .crm-mobile-nav { box-shadow: 0 -4px 20px rgba(0, 77, 102, .04); }
+  .crm-mobile-nav a { font-size: 10px; }
+  .crm-header h1 { font-size: 16px !important; }
+  .crm-header p, .crm-header-hub { display: none !important; }
+  .kanban-column { min-width: min(280px, 80vw); max-width: min(280px, 80vw); scroll-snap-align: start; }
+  .hub-header { padding: 0 12px !important; }
+  .hub-header-controls { gap: 8px !important; }
+  .hub-timer { display: none; }
+  .enquiry-stage-tabs { flex-wrap: nowrap !important; overflow-x: auto; width: 100%; padding-bottom: 4px; }
+  .enquiry-stage-tabs button { flex-shrink: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .crm-app-shell *, [data-mobile-overlay] * { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+.ems-section-toggle { display: none; }
+@media screen and (max-width: 767px) {
+  .mobile-workspace-header { height: auto !important; min-height: 64px; padding: 12px !important; flex-wrap: wrap; gap: 12px; }
+  .mobile-workspace-header > div { flex-wrap: wrap; gap: 8px !important; min-width: 0; }
+  .mobile-workspace-header button, .mobile-workspace-header a { min-height: 44px; }
+  .mobile-workspace-content { padding: 16px 12px 32px !important; min-width: 0; width: 100%; }
+  .ems-body { flex-direction: column; }
+  .ems-section-toggle { display: block; margin: 12px; padding: 12px; min-height: 44px; border: 1px solid var(--border); border-radius: 12px; background: white; color: var(--primary); font: inherit; font-weight: 600; text-align: left; }
+  .ems-sidebar { display: none !important; }
+  .ems-sidebar.open { display: flex !important; width: 100% !important; max-height: 50dvh; border-bottom: 1px solid var(--border); }
+  .ems-sidebar button { min-height: 44px; }
+  .mobile-workspace-content div[style*="justify-content: space-between"] { flex-wrap: wrap; gap: 8px; }
+}
+@media screen and (max-width: 767px) {
+  table[data-mobile-cards] td a[href^="mailto:"], table[data-mobile-cards] td a[href^="tel:"] { max-width: 100% !important; white-space: normal !important; overflow-wrap: anywhere; min-height: 36px; }
+  table[data-mobile-cards] td div[style*="display: flex"] { flex-wrap: wrap; }
+  .crm-select > button:first-child { min-height: 44px; }
+  .crm-select-clear { min-width: 44px !important; min-height: 44px !important; }
+  .crm-select-options { min-width: 100% !important; max-width: min(100%, calc(100vw - 24px)) !important; max-height: min(320px, 45dvh) !important; }
+}
+
+@media screen and (max-width: 767px) {
+  table[data-mobile-cards] > tbody > tr > td:first-child > div { flex-wrap: nowrap; align-items: flex-start !important; }
+  table[data-mobile-cards] > tbody > tr > td:first-child > div > div:last-child { flex: 1; min-width: 0; }
+}

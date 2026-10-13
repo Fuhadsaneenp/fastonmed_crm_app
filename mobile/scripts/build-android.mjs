@@ -1,0 +1,10 @@
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+const root = fileURLToPath(new URL('../', import.meta.url));
+const prep = spawnSync(process.execPath, ['scripts/sync-bridge.mjs'], { cwd: root, stdio: 'inherit' });
+if (prep.status !== 0) process.exit(prep.status || 1);
+const cap = spawnSync(process.execPath, ['node_modules/@capacitor/cli/bin/capacitor', 'sync', 'android'], { cwd: root, stdio: 'inherit' });
+if (cap.status !== 0) process.exit(cap.status || 1);
+const build = spawnSync(process.platform === 'win32' ? 'gradlew.bat' : './gradlew', ['assembleDebug'], { cwd: `${root}android`, stdio: 'inherit' });
+if (build.error) console.error('Android build tools are missing. Install Android Studio with its SDK and JDK, then retry.');
+process.exit(build.status || (build.error ? 1 : 0));

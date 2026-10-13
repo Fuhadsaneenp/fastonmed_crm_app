@@ -1,0 +1,265 @@
+
+.layout-wrap {
+    .section-menu-left {
+        position: fixed;
+        width: 260px;
+        min-width: 260px;
+        height: 100%;
+        left: 0;
+        z-index: 20;
+        border-right: 0.5px solid rgba(48, 48, 48, 0.1);
+        padding-top: 81px;
+        @include flex(center,start);
+        flex-direction: column;
+        flex-shrink: 0;
+        @include transition3;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        &::before {
+            position: absolute;
+            inset: 0;
+            content: '';
+            background: var(--White);
+        }
+        > .box-logo {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 30;
+            padding: 23px 21px 15px 24px;
+            width: 260px;
+            @include flex(center,space-between);
+            @include transition3;
+            z-index: 6;
+        }
+        .section-menu-left-wrap {
+            width: 100%;
+            overflow-y: auto;
+            position: relative;
+            z-index: 5;
+            &::-webkit-scrollbar {
+                width: 0px;
+                height: 0;
+            }
+            &::-webkit-scrollbar-thumb {
+                background: var(--Note);
+                border-radius: 10px;
+            }
+        }
+        .center {
+            padding: 13px 0;
+            width: 100%;
+            ul {
+                display: grid;
+            }
+        }
+        .menu-item {
+            position: relative;
+            a {
+                padding: 12px 14px 14px 24px;
+                position: relative;
+                @include flex(center,start);
+                gap: 12px;
+                .icon {
+                    width: 24px;
+                    height: 26px;
+                    place-content: center;
+                    svg path {
+                        @include transition3;
+                        fill: #0A0A0C;
+                    }
+                    i {
+                        font-size: 24px;
+                        color: #0A0A0C;
+                        @include transition3;
+                    }
+                }
+                .text {
+                    color: #0A0A0C;
+                    font-size: 16px;
+                    font-weight: 600;
+                    line-height: 26px;
+                    text-transform: capitalize;
+                    white-space: nowrap;
+                    @include transition3;
+                }
+                &.active,
+                &:hover {
+                    &::after,
+                    i,
+                    .text {
+                        color: var(--Secondary) !important;
+                    }
+                    svg {
+                        path {
+                            fill: var(--Secondary) !important;
+                        }
+                    }
+                }
+            }
+            &.has-children {
+                position: relative;
+                transition-delay: 0.3s;
+                &::after {
+                    position: absolute;
+                    content: '\e936';
+                    top: 12px;
+                    right: 21px;
+                    color: #0A0A0C;
+                    font-size: 25px;
+                    font-family: $fontIcon;
+                    @include transition3;
+                    cursor: pointer;
+                }
+                .sub-menu {
+                    display: none;
+                    overflow-x: auto;
+                    &::-webkit-scrollbar {
+                        width: 3px;
+                    }
+                    .sub-menu-item {
+                        position: relative;
+                        padding: 12px 0 12px 56px;
+                        &.active {
+                            a {
+                                .text {
+                                    color: var(--Secondary);
+                                }
+                                &::before {
+                                    border-color: var(--Secondary);
+                                }
+                            }
+                        }
+                    }
+                    a {
+                        padding: 0;
+                        position: relative;
+                        &::before {
+                            position: absolute;
+                            content: '';
+                            top: 50%;
+                            transform: translateY(-50%);
+                            left: -15px;
+                            width: 8px;
+                            height: 8px;
+                            border: 2px solid #0A0A0C;
+                            border-radius: 50%;
+                        }
+                     
+                    }
+                }
+                &.active {
+                    > a {
+                        background-color: rgb(246, 246, 246,0.5);
+                        svg path {
+                            fill: var(--Secondary) !important;
+                        }
+                        i,
+                        .text {
+                            color: var(--Secondary);
+                        }
+                        &::after {
+                            position: absolute;
+                            content: '';
+                            top: 7px;
+                            left: -24px;
+                            width: 8px;
+                            height: 34px;
+                            background-color: var(--Secondary);
+                            border-radius: 8px;
+                        }
+                    }
+                    &::after {
+                        top: 14px;
+                        transform: rotate(90deg);
+                        color: var(--Secondary) !important;
+                    }
+                    > .sub-menu {
+                        display: block;
+                    }
+                }
+                &:hover::after {
+                    color: var(--Secondary);
+                }
+            }
+            &:not(.has-children) {
+                &.active {
+                    background-color: var(--Surface-3);
+                    svg path {
+                        fill: var(--Secondary);
+                    }
+                    .icon i,
+                    .text {
+                        color: var(--Secondary);
+                    }
+                }
+            }
+        }
+        .center-heading {
+            color: #BDC7D3;
+            font-size: 16px;
+            line-height: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+            padding: 16px 24px 6px;
+        }
+        a {
+            position: relative;
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+        }
+        .button-show-hide {
+            position: relative;
+            @include flex(center,center);
+            font-size: 24px;
+            width: 28px;
+            height: 28px;
+            color: rgba(10, 10, 12, 1);
+            border-radius: 4px;
+            background-color: rgba(246, 246, 246, 1);
+            cursor: pointer;
+            transition: all 0.3s, background 0s ease;
+            i {
+                @include transition3;
+            }
+            &:hover {
+                i {
+                    color: var(--Secondary);
+                }
+            }
+        }
+        .wg-social {
+            padding: 12px 14px 14px 24px;
+        }
+        .bot {
+            .wrap {
+                padding: 16px 24px 13px 24px;
+            }
+        }
+    }
+    &.full-width {
+       
+        .section-menu-left {
+            left: -260px;
+            > .box-logo {
+                left: -260px;
+                border-bottom: 0;
+            }
+        }
+        .button-show-hide {
+            transform: rotate(180deg);
+        }
+        .header-dashboard {
+            .button-show-hide {
+                @include d-flex();
+                i {
+                    color: #0A0A0C;
+                }
+            }
+        }
+    }
+}
