@@ -259,7 +259,7 @@ export default function ServiceTrackPage() {
       setNewContactPhone(c.phone || defaultClient.phone || "");
     } else {
       setNewConcernedPerson("Dr. Sarah Al-Hashimi (Biomedical Lead)");
-      setNewContactPhone(defaultClient?.phone || "+971 50 123 4567");
+      setNewContactPhone(defaultClient?.phone || "");
     }
     setNewEquipment("ICU Ventilator SV-300");
     setNewModel("SV-300");

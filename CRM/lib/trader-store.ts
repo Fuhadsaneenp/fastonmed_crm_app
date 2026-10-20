@@ -1,3 +1,4 @@
+import { isRetiredDirectoryRecord } from "@/lib/directory-cleanup";
 import type { Product, ProcurementCompany, ProductCategory } from "@/types";
 import { mockProducts as initialMockProducts, mockClients } from "@/lib/mock-data";
 
@@ -75,7 +76,7 @@ export function getDeterministicRepresentative(nameOrId: string, index?: number)
 }
 
 export function isLegacyDummyCompany(company: Pick<ProcurementCompany, "id" | "name">): boolean {
-  if (!company) return true;
+  if (!company || isRetiredDirectoryRecord(company)) return true;
   const normalizedName = (company.name || "").trim().toLowerCase().replace(/\s+/g, " ");
   const normalizedId = (company.id || "").replace(/^trader-/, "").replace(/^comp-comp-/, "comp-");
   if (LEGACY_DUMMY_COMPANY_IDS.has(normalizedId) || LEGACY_DUMMY_COMPANY_NAMES.has(normalizedName)) {

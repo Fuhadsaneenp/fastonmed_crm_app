@@ -1,3 +1,5 @@
+import { filterRetiredRecords } from "@/lib/retired-records";
+import { withRetiredResponse } from "@/lib/retired-response";
 import { NextRequest, NextResponse } from "next/server";
 import { getDbPool } from "@/lib/db";
 import type { ServiceTicket } from "@/types";
@@ -27,6 +29,7 @@ function loadBackupFileServices(): ServiceTicket[] | null {
 }
 
 function saveBackupFileServices(tickets: ServiceTicket[]): void {
+  tickets = filterRetiredRecords("services", tickets);
   try {
     const dir = path.dirname(BACKUP_FILE);
     if (!fs.existsSync(dir)) {
@@ -80,6 +83,7 @@ async function getStoredServicesFromDb(pool: any): Promise<ServiceTicket[] | nul
 }
 
 async function saveServicesToDb(pool: any, tickets: ServiceTicket[]): Promise<boolean> {
+  tickets = filterRetiredRecords("services", tickets);
   try {
     const companyId = await getValidCompanyId(pool);
     const jsonStr = JSON.stringify(tickets);
@@ -129,7 +133,7 @@ function getEffectiveServices(): ServiceTicket[] {
   return [];
 }
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   try {
     let tickets: ServiceTicket[] | null = null;
     try {
@@ -166,7 +170,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
+async function handlePOST(req: NextRequest) {
   try {
     const body = await req.json();
     let current = getEffectiveServices();
@@ -251,7 +255,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function PUT(req: NextRequest) {
+async function handlePUT(req: NextRequest) {
   try {
     const body = await req.json();
     const id = body.id || body.ticketId || body.ticket?.id;
@@ -304,7 +308,7 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-export async function DELETE(req: NextRequest) {
+async function handleDELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     let targetId = searchParams.get("id");
@@ -354,3 +358,8 @@ export async function DELETE(req: NextRequest) {
     );
   }
 }
+
+export const GET = withRetiredResponse(handleGET, "services", "tickets");
+export const POST = withRetiredResponse(handlePOST, "services", "tickets");
+export const PUT = withRetiredResponse(handlePUT, "services", "tickets");
+export const DELETE = withRetiredResponse(handleDELETE, "services", "tickets");

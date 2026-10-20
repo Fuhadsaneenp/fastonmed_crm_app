@@ -1,3 +1,6 @@
+import { cleanDirectoryDataset } from "@/lib/directory-cleanup";
+import { filterRetiredRecords, getRetiredIds } from "@/lib/retired-records";
+import { isRetiredDirectoryRecord } from "@/lib/directory-cleanup";
 import {
   getStoredCompanies as getStoredTraderCompanies,
   saveStoredCompanies,
@@ -120,8 +123,8 @@ export function convertQuotationToLead(quote: Quotation): Lead {
     clientId: quote.clientId,
     clientName: quote.clientName,
     contactName: quote.contactPerson || quote.clientName,
-    phone: quote.contactPhone || "+971 4 000 0000",
-    email: quote.contactEmail || "info@fastonmed.com",
+    phone: quote.contactPhone || "",
+    email: quote.contactEmail || "",
     category: deduceLeadCategory(productName),
     product: productName,
     quantity: item?.qty || 1,
@@ -178,7 +181,7 @@ export function isDummyLead(
 
 export function deduplicateLeads(leads: Lead[]): Lead[] {
   if (!Array.isArray(leads) || leads.length === 0) return [];
-  const deletedIds = getDeletedLeadIds();
+  const deletedIds = new Set([...getDeletedLeadIds(), ...getRetiredIds("leads")]);
   const seenId = new Set<string>();
   const seenKey = new Map<string, Lead>();
   const result: Lead[] = [];
@@ -230,67 +233,11 @@ export function deduplicateLeads(leads: Lead[]): Lead[] {
 }
 
 export function mergeQuotationsIntoLeads(baseLeads: Lead[]): Lead[] {
-  const quotes = getZohoLiveQuotes();
+  // Quotations remain in their own section; reading leads must not recreate deals.
   const deletedLeadIds = getDeletedLeadIds();
-  // Keep ALL real base leads - whether Organisation OR Person/Individual!
-  const cleanedBaseLeads = (baseLeads || []).filter((l) => !isDummyLead(l) && !deletedLeadIds.has(l.id));
-  if (!quotes || quotes.length === 0) return deduplicateLeads(cleanedBaseLeads);
-
-  const leadMap = new Map<string, Lead>();
-  for (const lead of cleanedBaseLeads) {
-    leadMap.set(lead.id, lead);
-    if (lead.quotationNumber) {
-      leadMap.set(`quote-ref-${lead.quotationNumber.toLowerCase()}`, lead);
-    }
-  }
-
-  const newQuoteLeads: Lead[] = [];
-
-  for (const quote of quotes) {
-    if (
-      quote.clientName?.toLowerCase().includes("willie") ||
-      quote.clientName?.toLowerCase().includes("padma")
-    ) {
-      continue;
-    }
-
-    const qNumKey = `quote-ref-${(quote.quotationNumber || "").toLowerCase()}`;
-    const qLeadIdKey = `lead-qt-${quote.quotationNumber || quote.id}`;
-
-    // If this quote or generated lead ID was explicitly deleted by user, do NOT resurrect!
-    if (deletedLeadIds.has(qLeadIdKey) || deletedLeadIds.has(quote.id) || deletedLeadIds.has(String(quote.quotationNumber))) {
-      continue;
-    }
-
-    const existing = leadMap.get(qNumKey) || leadMap.get(qLeadIdKey);
-
-    if (existing) {
-      existing.quotationNumber = quote.quotationNumber;
-      // If user has explicitly set an estimatedValue on the lead, preserve the lead's estimatedValue!
-      if (typeof existing.estimatedValue === "number" && existing.estimatedValue > 0) {
-        existing.quotationValue = existing.estimatedValue;
-        if (quote.total !== existing.estimatedValue) {
-          quote.total = existing.estimatedValue;
-          quote.subtotal = Math.round(existing.estimatedValue / 1.05);
-        }
-      } else {
-        existing.estimatedValue = quote.total || 0;
-        existing.quotationValue = quote.total || 0;
-      }
-      if (quote.status === "Approved" && existing.stage !== "Approved") {
-        existing.stage = "Approved";
-      }
-    } else {
-      const newLead = convertQuotationToLead(quote);
-      if (!deletedLeadIds.has(newLead.id)) {
-        newQuoteLeads.push(newLead);
-        leadMap.set(newLead.id, newLead);
-        leadMap.set(qNumKey, newLead);
-      }
-    }
-  }
-
-  return deduplicateLeads([...newQuoteLeads, ...cleanedBaseLeads]);
+  return filterRetiredRecords("leads", deduplicateLeads((baseLeads || []).filter(
+    lead => !isDummyLead(lead) && !deletedLeadIds.has(lead.id)
+  )));
 }
 
 export function syncLeadToQuotations(lead: Lead, quoteNumber: string, quoteAmount?: number) {
@@ -369,7 +316,7 @@ export function clearDummyLeads(): void {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        const deletedIds = getDeletedLeadIds();
+        const deletedIds = new Set([...getDeletedLeadIds(), ...getRetiredIds("leads")]);
         const filtered = deduplicateLeads(parsed.filter((l: Lead) => l && l.id && !deletedIds.has(l.id) && !isDummyLead(l)));
         if (filtered.length !== parsed.length) {
           localStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(filtered));
@@ -417,7 +364,7 @@ export function deleteStoredLead(leadId: string): Lead[] {
   } catch {}
 
   const target = current.find((l) => l.id === leadId);
-  const deletedIds = getDeletedLeadIds();
+  const deletedIds = new Set([...getDeletedLeadIds(), ...getRetiredIds("leads")]);
   const updated = current.filter((l) => l.id !== leadId && !deletedIds.has(l.id));
 
   localStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(deduplicateLeads(updated)));
@@ -461,7 +408,7 @@ export async function syncLeadsFromServer(): Promise<Lead[]> {
     if (res.ok) {
       const data = await res.json();
       const serverLeads: Lead[] = Array.isArray(data?.leads) ? data.leads : [];
-      const deletedIds = getDeletedLeadIds();
+      const deletedIds = new Set([...getDeletedLeadIds(), ...getRetiredIds("leads")]);
 
       const localData = localStorage.getItem(LEADS_STORAGE_KEY);
       let localClean: Lead[] = [];
@@ -524,9 +471,9 @@ export async function syncLeadsFromServer(): Promise<Lead[]> {
   return getStoredLeads();
 }
 
-export function getStoredLeads(): Lead[] {
+function readCachedgetStoredLeads(): Lead[] {
   let stored: Lead[] = [];
-  const deletedIds = getDeletedLeadIds();
+  const deletedIds = new Set([...getDeletedLeadIds(), ...getRetiredIds("leads")]);
   if (typeof window !== "undefined") {
     try {
       const data = localStorage.getItem(LEADS_STORAGE_KEY);
@@ -554,10 +501,8 @@ export function getStoredLeads(): Lead[] {
         localStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(cleaned));
       } catch {}
     }
-    // If empty locally, trigger asynchronous server sync to hydrate immediately
-    if (cleaned.length === 0) {
-      void syncLeadsFromServer();
-    }
+    // Reading cached leads must remain synchronous. Pages initiate server
+    // synchronization in their effects after mounting.
   }
 
   // Merge live quotations from Zoho Books so they appear in "Quotation Forwarded"
@@ -567,7 +512,7 @@ export function getStoredLeads(): Lead[] {
 export function saveStoredLeads(leads: Lead[]): void {
   if (typeof window === "undefined") return;
   try {
-    const deletedIds = getDeletedLeadIds();
+    const deletedIds = new Set([...getDeletedLeadIds(), ...getRetiredIds("leads")]);
     const filtered = deduplicateLeads((leads || []).filter((l) => !isDummyLead(l) && !deletedIds.has(l.id)));
     localStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(filtered));
     window.dispatchEvent(new Event("fastonmed_leads_updated"));
@@ -607,7 +552,7 @@ export function markClientDeleted(clientId: string): void {
   } catch {}
 }
 
-export function getStoredClients(): Client[] {
+function readCachedOrganisationClients(): Client[] {
   if (typeof window === "undefined") return [];
   try {
     const deletedIds = getDeletedClientIds();
@@ -620,7 +565,7 @@ export function getStoredClients(): Client[] {
     // Only use saved CRM records; never inject the bundled sample directory.
     if (Array.isArray(parsed) && parsed.length > 0) {
       for (const c of parsed) {
-        if (!c || !c.id || deletedIds.has(c.id)) continue;
+        if (!c || !c.id || deletedIds.has(c.id) || isRetiredDirectoryRecord(c)) continue;
         clientMap.set(c.id, normalizeClient(c));
       }
     }
@@ -1127,6 +1072,7 @@ export function saveStoredClients(clients: Client[], syncServer = true): void {
       const parsed = raw ? JSON.parse(raw) : [];
       if (Array.isArray(parsed)) previous = parsed;
     } catch {}
+    clients = clients.filter((client) => !isRetiredDirectoryRecord(client));
     const serialized = JSON.stringify(clients);
     const changed = localStorage.getItem(CLIENTS_STORAGE_KEY) !== serialized;
     localStorage.setItem(CLIENTS_STORAGE_KEY, serialized);
@@ -1161,7 +1107,7 @@ export async function syncLiveClientsFromApi(): Promise<Client[]> {
   for (const result of results) {
     if (result.status === "fulfilled" && Array.isArray(result.value)) {
       loaded = true;
-      for (const client of result.value) if (client?.id) merged.set(client.id, normalizeClient(client));
+      for (const client of result.value) if (client?.id && !isRetiredDirectoryRecord(client)) merged.set(client.id, normalizeClient(client));
     }
   }
   if (!loaded) throw new Error("The live client database is unavailable");
@@ -1240,9 +1186,9 @@ export function addClientFromLead(leadData: {
           name: leadData.contactName.trim(),
           designation: isIndividual ? "Doctor / Key Contact" : "Procurement Lead / Key Contact",
           department: (isIndividual ? "Doctor" : "Purchase") as Department,
-          phone: leadData.phone?.trim() || "+971 4 000 0000",
-          whatsapp: leadData.phone?.trim() || "+971 4 000 0000",
-          email: leadData.email?.trim() || "contact@facility.ae",
+          phone: leadData.phone?.trim() || "",
+          whatsapp: leadData.phone?.trim() || "",
+          email: leadData.email?.trim() || "",
           lastContacted: new Date().toISOString().slice(0, 10),
           createdAt: new Date().toISOString(),
           createdBy: creator.name || "User not recorded",
@@ -1261,10 +1207,10 @@ export function addClientFromLead(leadData: {
     city: "Dubai",
     state: "Dubai",
     pincode: "00000",
-    phone: leadData.phone?.trim() || "+971 4 000 0000",
-    phones: [leadData.phone?.trim() || "+971 4 000 0000"],
-    email: leadData.email?.trim() || "contact@facility.ae",
-    emails: [leadData.email?.trim() || "contact@facility.ae"],
+    phone: leadData.phone?.trim() || "",
+    phones: leadData.phone?.trim() ? [leadData.phone.trim()] : [],
+    email: leadData.email?.trim() || "",
+    emails: leadData.email?.trim() ? [leadData.email.trim()] : [],
     source: leadData.source || "Direct Enquiry",
     assignedTo: leadData.assignedTo || "emp-1",
     createdAt: new Date().toISOString().slice(0, 10),
@@ -1323,8 +1269,8 @@ export function getStoredPeople(): ContactPerson[] {
             name: client.name,
             designation: isDoc ? "Doctor / Medical Specialist" : "Healthcare Key Contact / User",
             department: (isDoc ? "Doctor" : "Purchase") as Department,
-            phone: client.phone || "+971 4 000 0000",
-            whatsapp: client.phone || "+971 4 000 0000",
+            phone: client.phone || "",
+            whatsapp: client.phone || "",
             email: client.email || "",
             status: "Independent / Consultant",
             notes: `Individual contact registered in UAE healthcare network (${client.city || "Dubai"}).`,
@@ -1399,8 +1345,8 @@ export function getStoredPeople(): ContactPerson[] {
             name: client.name,
             designation: isDoc ? "Doctor / Medical Specialist" : "Healthcare Key Contact / User",
             department: (isDoc ? "Doctor" : "Purchase") as Department,
-            phone: client.phone || "+971 4 000 0000",
-            whatsapp: client.phone || "+971 4 000 0000",
+            phone: client.phone || "",
+            whatsapp: client.phone || "",
             email: client.email || "",
             status: "Independent / Consultant",
             notes: `Individual contact registered in UAE healthcare network (${client.city || "Dubai"}).`,
@@ -1505,8 +1451,8 @@ export function syncClientContactsToPeople(clients: Client[]): void {
             name: client.name,
             designation: isDoc ? "Doctor / Medical Specialist" : "Healthcare Key Contact / User",
             department: (isDoc ? "Doctor" : "Purchase") as Department,
-            phone: client.phone || "+971 4 000 0000",
-            whatsapp: client.phone || "+971 4 000 0000",
+            phone: client.phone || "",
+            whatsapp: client.phone || "",
             email: client.email || "",
             status: "Independent / Consultant",
             notes: `Individual contact registered in UAE healthcare network (${client.city || "Dubai"}).`,
@@ -1742,4 +1688,19 @@ export function saveStoredDepartments(departments: string[]): void {
   } catch (e) {
     console.error("Failed to save departments:", e);
   }
+}
+
+export function getStoredLeads(): Lead[] {
+  return filterRetiredRecords("leads", readCachedgetStoredLeads()).map(lead => ({
+    ...lead,
+    email: lead.email?.trim().toLowerCase() === "procurement@facility.ae" ? "" : lead.email,
+    contacts: lead.contacts?.map(contact => ({
+      ...contact,
+      email: contact.email?.trim().toLowerCase() === "procurement@facility.ae" ? "" : contact.email,
+    })),
+  }));
+}
+
+export function getStoredClients(): Client[] {
+  return cleanDirectoryDataset("clients", readCachedOrganisationClients()) as Client[];
 }

@@ -4,6 +4,7 @@ import { apiRequest } from "@/lib/api-client";
 import { formatCurrency, getInitials } from "@/lib/utils";
 import type { Employee } from "@/types";
 import toast from "react-hot-toast";
+import { Users, CalendarDays, Clock3, Wallet, Search, Phone, Mail, Star } from "lucide-react";
 
 const DEPT_COLORS: Record<string, { bg: string; color: string }> = {
   Sales: { bg: "#dbeafe", color: "#2563eb" },
@@ -79,10 +80,10 @@ export default function EmployeesPage() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, animation: "fadeIn 0.3s ease" }}>
+    <div className="employees-page" style={{ display: "flex", flexDirection: "column", gap: 20, animation: "fadeIn 0.3s ease" }}>
       {/* EMS Section Navigation Header */}
       <div
-        className="card"
+        className="card employees-header"
         style={{
           padding: "12px 18px",
           display: "flex",
@@ -93,7 +94,7 @@ export default function EmployeesPage() {
           borderLeft: "4px solid #2563eb",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div className="employees-intro" style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div
             style={{
               width: 38,
@@ -108,24 +109,25 @@ export default function EmployeesPage() {
               fontSize: 16,
             }}
           >
-            👥
+            <Users size={20} />
           </div>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 16, color: "#0f172a" }}>EMS — Employee Management Suite</div>
-            <div style={{ fontSize: 12, color: "#64748b" }}>Staff directory, attendance logs, leave approvals & payroll</div>
+            <div style={{ fontWeight: 800, fontSize: 16, color: "#0f172a" }}>Your team</div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>Manage your people and their workday</div>
           </div>
         </div>
 
         {/* Tab Switcher */}
-        <div style={{ display: "flex", gap: 6, background: "#f1f5f9", padding: 4, borderRadius: 8 }}>
+        <div className="employees-tabs" aria-label="Employee sections" style={{ display: "flex", gap: 6, background: "#f1f5f9", padding: 4, borderRadius: 8 }}>
           {[
-            { key: "directory", label: "Staff Directory", icon: "📋" },
-            { key: "leaves", label: "Leaves & Time-Off", icon: "🌴" },
-            { key: "attendance", label: "Attendance & Logs", icon: "⏱️" },
-            { key: "payroll", label: "Payroll & Salary", icon: "💳" },
+            { key: "directory", label: "Directory", icon: Users },
+            { key: "leaves", label: "Leave", icon: CalendarDays },
+            { key: "attendance", label: "Attendance", icon: Clock3 },
+            { key: "payroll", label: "Payroll", icon: Wallet },
           ].map((tab) => (
             <button
               key={tab.key}
+              aria-pressed={activeTab === tab.key}
               onClick={() => setActiveTab(tab.key as typeof activeTab)}
               style={{
                 display: "flex",
@@ -143,7 +145,7 @@ export default function EmployeesPage() {
                 transition: "all 0.15s ease",
               }}
             >
-              <span>{tab.icon}</span>
+              <tab.icon size={16} aria-hidden="true" />
               <span>{tab.label}</span>
             </button>
           ))}
@@ -164,7 +166,7 @@ export default function EmployeesPage() {
 
       {activeTab === "leaves" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div data-mobile-grid="stack" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+          <div className="employee-leave-metrics" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14 }}>
             <div className="card" style={{ padding: "16px 20px" }}>
               <div style={{ fontSize: 24, fontWeight: 800, color: "#2563eb" }}>14</div>
               <div style={{ fontSize: 12, color: "#64748b" }}>Annual Leave Balance Avg</div>
@@ -244,7 +246,7 @@ export default function EmployeesPage() {
 
       {activeTab === "attendance" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div data-mobile-grid="metrics" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
+          <div className="employees-metrics" data-mobile-grid="metrics" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
             <div className="card" style={{ padding: "16px 20px" }}>
               <div style={{ fontSize: 24, fontWeight: 800, color: "#059669" }}>24 / 26</div>
               <div style={{ fontSize: 12, color: "#64748b" }}>Present Today</div>
@@ -362,7 +364,7 @@ export default function EmployeesPage() {
               { label: "Total Employees", value: employees.length, color: "#2563eb" },
               { label: "Sales Team", value: employees.filter((e) => e.department === "Sales").length, color: "#7c3aed" },
               { label: "Technical Team", value: employees.filter((e) => e.department === "Technical").length, color: "#059669" },
-              { label: "Total Revenue Generated", value: formatCurrency(totalRevenue), color: "#d97706" },
+              { label: "Revenue generated", value: formatCurrency(totalRevenue), color: "#d97706" },
             ].map((s) => (
               <div key={s.label} className="card" style={{ padding: "16px 20px" }}>
                 <div style={{ fontSize: typeof s.value === "string" ? 18 : 24, fontWeight: 800, color: s.color }}>{s.value}</div>
@@ -372,15 +374,17 @@ export default function EmployeesPage() {
           </div>
 
           {/* Controls */}
-          <div className="card" style={{ padding: "14px 20px", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <div className="card employees-controls" style={{ padding: "14px 20px", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+            <label className="employees-search"><Search size={16} aria-hidden="true" />
             <input
               className="form-input"
-              placeholder="🔍  Search employees..."
+              aria-label="Search employees"
+              placeholder="Search name or role…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{ maxWidth: 260 }}
-            />
-            <select className="form-input" value={filterDept} onChange={(e) => setFilterDept(e.target.value)} style={{ maxWidth: 180 }}>
+            /></label>
+            <select aria-label="Department" className="form-input" value={filterDept} onChange={(e) => setFilterDept(e.target.value)} style={{ maxWidth: 180 }}>
               <option value="All">All Departments</option>
               <option>Sales</option>
               <option>Technical</option>
@@ -399,7 +403,11 @@ export default function EmployeesPage() {
           return (
             <div
               key={emp.id}
-              className="card"
+              className="card employee-directory-card"
+              role="button"
+              tabIndex={0}
+              aria-label={`View ${emp.name}`}
+              onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelected(emp); } }}
               style={{ padding: 0, overflow: "hidden", cursor: "pointer", transition: "transform 0.2s, box-shadow 0.2s" }}
               onClick={() => setSelected(emp)}
               onMouseEnter={(e) => {
@@ -414,8 +422,8 @@ export default function EmployeesPage() {
               {/* Top gradient */}
               <div style={{ height: 6, background: AVATAR_COLORS[idx % AVATAR_COLORS.length] }} />
 
-              <div style={{ padding: "20px 22px" }}>
-                <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 14 }}>
+              <div className="employee-card-body" style={{ padding: "20px 22px" }}>
+                <div className="employee-card-identity" style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 14 }}>
                   <div
                     style={{
                       width: 56,
@@ -453,12 +461,12 @@ export default function EmployeesPage() {
                   </div>
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 14 }}>
-                  <div style={{ fontSize: 12, color: "#64748b" }}>📞 {emp.phone}</div>
-                  <div style={{ fontSize: 12, color: "#64748b" }}>✉️ {emp.email}</div>
+                <div className="employee-card-contact" style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 14 }}>
+                  <div><Phone size={14} aria-hidden="true" /><span>{emp.phone}</span></div>
+                  <div><Mail size={14} aria-hidden="true" /><span>{emp.email}</span></div>
                 </div>
 
-                <div data-mobile-grid="stack"
+                <div className="employee-card-performance"
                   style={{
                     borderTop: "1px solid #f1f5f9",
                     paddingTop: 12,
@@ -493,8 +501,8 @@ export default function EmployeesPage() {
                     <div style={{ fontSize: 10, color: "#94a3b8" }}>Revenue</div>
                   </div>
                   <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 14 }}>{"⭐".repeat(Math.floor(emp.performance.rating))}</div>
-                    <div style={{ fontSize: 10, color: "#94a3b8" }}>{emp.performance.rating}</div>
+                    <div className="employee-card-rating"><Star size={13} fill="currentColor" aria-hidden="true" />{emp.performance.rating}</div>
+                    <div style={{ fontSize: 10, color: "#94a3b8" }}>Rating</div>
                   </div>
                 </div>
               </div>

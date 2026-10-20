@@ -324,33 +324,6 @@ export default function EnquiriesPage() {
           })}
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 12, color: "#94a3b8" }}>
-            Showing <strong>{filtered.length}</strong> of {items.length}
-          </span>
-          <button
-            onClick={() => void load()}
-            disabled={loading}
-            title="Refresh list"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "6px 12px",
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 500,
-              background: "#ffffff",
-              border: "1px solid #e2e8f0",
-              color: "#475569",
-              cursor: "pointer",
-              transition: "all 0.15s ease",
-            }}
-          >
-            <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
-            <span>Refresh</span>
-          </button>
-        </div>
       </div>
 
       {/* Main Table Card */}

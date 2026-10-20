@@ -1,3 +1,4 @@
+import { filterRetiredRecords, getRetiredIds } from "@/lib/retired-records";
 import { mockServiceTickets } from "@/lib/mock-data";
 import { getStoredTasks, saveStoredTasks } from "@/lib/task-store";
 import type { ServiceTicket, ServiceStatus, Task, TaskPriority, TaskStatus } from "@/types";
@@ -94,7 +95,7 @@ export function addStoredServiceType(name: string): string[] {
   return updated;
 }
 
-export function getStoredServiceTickets(): ServiceTicket[] {
+function readCachedgetStoredServiceTickets(): ServiceTicket[] {
   const fallback: ServiceTicket[] = [];
   if (typeof window === "undefined") return fallback;
   try {
@@ -158,7 +159,7 @@ export async function fetchStoredServiceTicketsFromServer(): Promise<ServiceTick
         ? data
         : [];
 
-      if (serverTickets.length > 0) {
+      if (Array.isArray(data.tickets) || Array.isArray(data)) {
         localStorage.setItem(SERVICES_STORAGE_KEY, JSON.stringify(serverTickets));
         syncServiceTicketsToTasks(serverTickets);
         window.dispatchEvent(new CustomEvent("fastonmed_services_updated", { detail: serverTickets }));
@@ -352,4 +353,8 @@ export function syncServiceTicketsToTasks(tickets: ServiceTicket[]): Task[] {
 
 export function syncStoredServiceTicketsToTasks(): Task[] {
   return syncServiceTicketsToTasks(getStoredServiceTickets());
+}
+
+export function getStoredServiceTickets(): ServiceTicket[] {
+  return filterRetiredRecords("services", readCachedgetStoredServiceTickets());
 }

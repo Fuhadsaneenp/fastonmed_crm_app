@@ -23,7 +23,7 @@ import {
   saveStoredClients,
 } from "@/lib/client-store";
 import toast from "react-hot-toast";
-import { Mail, Trash2, LayoutGrid, List, Building2, Plus, ChevronDown, ExternalLink } from "lucide-react";
+import { Mail, Trash2, Building2, Plus, ChevronDown, ExternalLink } from "lucide-react";
 
 const CATEGORIES: ProductCategory[] = DEFAULT_PRODUCT_CATEGORIES;
 
@@ -43,7 +43,6 @@ export default function CompaniesPage() {
   };
   const [partnershipFilter, setPartnershipFilter] = useState("All");
   const [categoryFilter, setCategoryFilter] = useState("All");
-  const [view, setView] = useState<"grid" | "list">("list");
   const [showAddModal, setShowAddModal] = useState(false);
 
 
@@ -182,7 +181,7 @@ export default function CompaniesPage() {
           .trader-actions { justify-content: space-between; flex-wrap: wrap; }
         }
       `}</style>
-      <div className="card" style={{ padding: "10px 12px" }}>
+      <div className="card trader-filter-card" style={{ padding: "10px 12px" }}>
         <div className="trader-toolbar">
           <input
             className="form-input"
@@ -222,35 +221,17 @@ export default function CompaniesPage() {
           />
 
           <div className="trader-actions">
-            <div style={{ display: "flex", background: "#f1f5f9", padding: 3, borderRadius: 8, gap: 2 }}>
-              <button
-                type="button"
-                className={`btn ${view === "grid" ? "btn-primary" : "btn-secondary"}`}
-                style={{ padding: "5px 12px", fontSize: 12, display: "inline-flex", alignItems: "center", gap: 5 }}
-                onClick={() => setView("grid")}
-              >
-                <LayoutGrid size={13} />
-                Grid
-              </button>
-              <button
-                type="button"
-                className={`btn ${view === "list" ? "btn-primary" : "btn-secondary"}`}
-                style={{ padding: "5px 12px", fontSize: 12, display: "inline-flex", alignItems: "center", gap: 5 }}
-                onClick={() => setView("list")}
-              >
-                <List size={13} />
-                List
-              </button>
-            </div>
-
             <button
+              type="button"
+              aria-label="Add trader company"
+              title="Add trader company"
               className="btn btn-primary"
               style={{ backgroundColor: "#004d66", height: 36, padding: "6px 10px", fontSize: 12 }}
               onClick={() => {
                 setShowAddModal(true);
               }}
             >
-              + Add Trader Company
+              <Plus size={20} aria-hidden="true" /><span className="trader-add-label">Add Trader</span>
             </button>
           </div>
         </div>
@@ -259,11 +240,11 @@ export default function CompaniesPage() {
       {/* Showing count */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>
-          Showing <strong>{filtered.length}</strong> trader companies providing equipment categories in the UAE
+          <strong>{filtered.length}</strong> trader companies
         </p>
       </div>
 
-      {/* Companies Grid or List View */}
+      {/* Trader company list */}
       {filtered.length === 0 ? (
         <div
           className="card"
@@ -325,276 +306,6 @@ export default function CompaniesPage() {
               <span>Add Trader Company</span>
             </button>
           )}
-        </div>
-      ) : view === "grid" ? (
-        <div data-mobile-grid="stack" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 280px), 1fr))", gap: 12, alignItems: "start" }}>
-          {filtered.map((company) => {
-            const badgeStyle =
-              company.partnership === "Exclusive Partner"
-                ? { bg: "#fef3c7", color: "#b45309", border: "#fde68a" }
-                : company.partnership === "Authorized Distributor"
-                ? { bg: "#eaf8f4", color: "#004d66", border: "#b2e7d9" }
-                : { bg: "#f1f5f9", color: "#475569", border: "#e2e8f0" };
-
-            // Find products linked with this company
-            const companyProducts = products.filter(
-              (p) => p.traderCompanyId === company.id || p.traderCompanyName?.toLowerCase() === company.name.toLowerCase()
-            );
-
-            return (
-              <div
-                key={company.id}
-                className="card"
-                style={{
-                  padding: "14px 16px",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  borderRadius: 14,
-                  transition: "all 0.2s ease",
-                  cursor: "pointer",
-                  border: "1px solid #e2e8f0",
-                }}
-                onClick={() => handleOpenCompany(company)}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = "0 10px 28px rgba(0,0,0,0.09)";
-                  e.currentTarget.style.borderColor = "#004d66";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = "none";
-                  e.currentTarget.style.borderColor = "#e2e8f0";
-                }}
-              >
-                <div>
-                  {/* Header */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start", marginBottom: 12 }}>
-                    <div>
-                      <h3
-                        style={{ fontSize: 14, fontWeight: 600, color: "#002735", margin: 0, transition: "color 0.15s ease" }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = "#004d66")}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = "#002735")}
-                      >
-                        {company.name}
-                      </h3>
-                      <span style={{ fontSize: 12, color: "#64748b", marginTop: 2, display: "block" }}>
-                        Origin: {company.origin} · {company.uaeOffice.split(",")[0]}
-                      </span>
-                    </div>
-
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        backgroundColor: badgeStyle.bg,
-                        color: badgeStyle.color,
-                        border: `1px solid ${badgeStyle.border}`,
-                        padding: "3px 8px",
-                        borderRadius: 6,
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {company.partnership}
-                    </span>
-                  </div>
-
-                  <details onClick={(e) => e.stopPropagation()}>
-                    <summary style={{ cursor: "pointer", fontSize: 12, color: "#004d66", padding: "4px 0 10px" }}>
-                      {companyProducts.length} products · View details
-                    </summary>
-                  {/* Categories Provided Badges */}
-                  <div style={{ marginBottom: 12 }}>
-                    <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 5 }}>
-                      Categories Provided
-                    </div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                      {company.suppliedCategories && company.suppliedCategories.length > 0 ? (
-                        company.suppliedCategories.map((cat) => (
-                          <span
-                            key={cat}
-                            style={{
-                              fontSize: 11,
-                              fontWeight: 600,
-                              backgroundColor: "#f0f9ff",
-                              color: "#0284c7",
-                              border: "1px solid #bae6fd",
-                              padding: "2px 7px",
-                              borderRadius: 4,
-                            }}
-                          >
-                            {cat}
-                          </span>
-                        ))
-                      ) : (
-                        <span style={{ fontSize: 11, color: "#94a3b8", fontStyle: "italic" }}>
-                          General Medical Line
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Lead Time & Price Range Badges */}
-                  <div data-mobile-grid="stack"
-                    style={{
-                      backgroundColor: "#f8fafc",
-                      border: "1px solid #e2e8f0",
-                      borderRadius: 8,
-                      padding: "10px 12px",
-                      marginBottom: 14,
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: 8,
-                    }}
-                  >
-                    <div>
-                      <span style={{ fontSize: 10.5, color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>
-                        Supply Speed
-                      </span>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#004d66", marginTop: 2 }}>
-                        {company.deliveryLeadTime || "3 - 5 Days"}
-                      </div>
-                    </div>
-                    <div>
-                      <span style={{ fontSize: 10.5, color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>
-                        Trader Price Range
-                      </span>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#059669", marginTop: 2 }}>
-                        {company.priceRangeText}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Connected Products in CRM Catalog */}
-                  <div style={{ marginBottom: 14 }}>
-                    <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 5 }}>
-                      Connected Products in Catalog ({companyProducts.length})
-                    </div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                      {companyProducts.length > 0 ? (
-                        companyProducts.map((p) => (
-                          <span
-                            key={p.id}
-                            style={{
-                              fontSize: 11,
-                              backgroundColor: "#f1f5f9",
-                              color: "#334155",
-                              padding: "2px 7px",
-                              borderRadius: 4,
-                              fontWeight: 500,
-                            }}
-                          >
-                            📦 {p.name}
-                          </span>
-                        ))
-                      ) : (
-                        <span style={{ fontSize: 11.5, color: "#94a3b8", fontStyle: "italic" }}>
-                          No specific models logged yet (add via Products)
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Key Representatives */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, color: "#475569", marginBottom: 14 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <strong style={{ color: "#004d66" }}>
-                        UAE Contacts ({company.contacts && company.contacts.length > 0 ? company.contacts.length : 1}):
-                      </strong>
-                      {company.contacts && company.contacts.length > 1 && (
-                        <span style={{ fontSize: 10, fontWeight: 700, background: "#e0f2fe", color: "#0284c7", padding: "1px 6px", borderRadius: 4 }}>
-                          {company.contacts.length} People
-                        </span>
-                      )}
-                    </div>
-                    {(company.contacts && company.contacts.length > 0
-                      ? company.contacts
-                      : [
-                          {
-                            name: company.contactPerson,
-                            role: company.contactRole,
-                            phone: company.phone,
-                            email: company.email,
-                          },
-                        ]
-                    ).map((ct, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          borderBottom: i < (company.contacts?.length || 1) - 1 ? "1px dashed #e2e8f0" : "none",
-                          paddingBottom: 4,
-                        }}
-                      >
-                        <div style={{ fontWeight: 600, color: "#0f172a" }}>
-                          👤 {ct.name} <span style={{ fontSize: 11, color: "#64748b", fontWeight: 400 }}>({ct.role || "Rep"})</span>
-                        </div>
-                        <div style={{ fontSize: 11, color: "#004d66", marginTop: 2 }}>
-                          {ct.phone && (
-                            <a href={`tel:${ct.phone}`} style={{ color: "#004d66", textDecoration: "none", marginRight: 8 }}>
-                              📞 {ct.phone}
-                            </a>
-                          )}
-                          {ct.email && (
-                            <a href={`mailto:${ct.email}`} style={{ color: "#004d66", textDecoration: "none" }}>
-                              ✉️ {ct.email}
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ fontSize: 12, color: "#64748b", paddingBottom: 12 }}>
-                    Procurement volume: {formatCurrency(company.totalVolume)}
-                  </div>
-                  </details>
-                </div>
-
-                {/* Footer Metrics & Actions */}
-                <div
-                  style={{
-                    borderTop: "1px solid #f1f5f9",
-                    paddingTop: 12,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    {company.website && (
-                      <a
-                        href={company.website}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn btn-secondary"
-                        style={{ padding: "4px 10px", fontSize: 11.5 }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        Portal ↗
-                      </a>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    style={{
-                      padding: "4px 12px",
-                      fontSize: 11.5,
-                      fontWeight: 600,
-                      backgroundColor: "#004d66",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 4,
-                      borderRadius: 6,
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenCompany(company);
-                    }}
-                  >
-                    Open Profile →
-                  </button>
-                </div>
-              </div>
-            );
-          })}
         </div>
       ) : (
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>

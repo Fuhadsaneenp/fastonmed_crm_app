@@ -492,7 +492,7 @@ export default function ClientModal({
   };
 
   return (
-    <div data-mobile-overlay="true"
+    <div className="directory-editor-overlay" data-mobile-overlay="true"
       style={{
         position: "fixed",
         inset: 0,
@@ -507,7 +507,7 @@ export default function ClientModal({
       onClick={onClose}
     >
       <div
-        className="card"
+        className="card directory-editor directory-organisation-editor"
         style={{
           width: "100%",
           maxWidth: 960,
@@ -524,7 +524,7 @@ export default function ClientModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Executive Modal Header */}
-        <div
+        <div className="directory-editor-header"
           style={{
             padding: "18px 26px",
             borderBottom: "1px solid #f1f5f9",
@@ -555,7 +555,7 @@ export default function ClientModal({
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
                 <h2 style={{ fontSize: 16.5, fontWeight: 700, color: "#0f172a", margin: 0 }}>
-                  {isEdit ? "Edit Healthcare Facility" : "New Healthcare Client"}
+                  {isEdit ? "Edit organisation" : "Add Organisation"}
                 </h2>
                 <span
                   style={{
@@ -573,7 +573,7 @@ export default function ClientModal({
                 </span>
               </div>
               <p style={{ margin: "2px 0 0", fontSize: 12.5, color: "#64748b" }}>
-                Comprehensive facility profile, location mapping, and key procurement stakeholders
+                Add the organisation details and its main contact.
               </p>
             </div>
           </div>
@@ -602,7 +602,7 @@ export default function ClientModal({
         </div>
 
         {/* Modal Body: Balanced 2-Column Dashboard Cards */}
-        <div data-mobile-grid="stack"
+        <div className="directory-editor-body" data-mobile-grid="stack"
           style={{
             padding: "22px 26px 26px 26px",
             overflowY: "auto",
@@ -1234,73 +1234,21 @@ export default function ClientModal({
                       </button>
                     </div>
                   ) : (
-                    <div style={{ position: "relative" }} ref={placeDropdownRef}>
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="e.g. Oud Metha"
-                        value={form.city}
-                        onChange={(e) => {
-                          handlePlaceChange(e.target.value);
-                          setIsPlaceDropdownOpen(true);
-                        }}
-                        onFocus={() => setIsPlaceDropdownOpen(true)}
-                        style={{ fontSize: 12.5, height: 38, borderRadius: 8 }}
-                      />
-                      <ChevronDown
-                        size={14}
-                        color="#64748b"
-                        style={{
-                          position: "absolute",
-                          right: 10,
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                          pointerEvents: "none",
-                        }}
-                      />
-
-                      {isPlaceDropdownOpen && (
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: "calc(100% + 4px)",
-                            left: 0,
-                            right: 0,
-                            backgroundColor: "#ffffff",
-                            border: "1px solid #cbd5e1",
-                            borderRadius: 8,
-                            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.12)",
-                            zIndex: 9999,
-                            maxHeight: 180,
-                            overflowY: "auto",
-                            padding: 4,
-                          }}
-                        >
-                          {localPlaces
-                            .filter((p) =>
-                              p.toLowerCase().includes((form.city || "").toLowerCase().trim())
-                            )
-                            .map((place) => (
-                              <div
-                                key={place}
-                                onClick={() => handleSelectPlace(place)}
-                                style={{
-                                  padding: "6px 10px",
-                                  fontSize: 12,
-                                  borderRadius: 6,
-                                  cursor: "pointer",
-                                  color: "#1e293b",
-                                  transition: "background 0.1s",
-                                }}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f1f5f9")}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                              >
-                                {place}
-                              </div>
-                            ))}
-                        </div>
-                      )}
-                    </div>
+                    <CustomLightSelect
+                      sheetTitle="Area / District"
+                      placeholder="Select area or district"
+                      value={form.city}
+                      options={localPlaces.map((place) => ({ value: place, label: place }))}
+                      onChange={handleSelectPlace}
+                      clearable={false}
+                      searchable
+                      onAddNew={(query) => {
+                        setNewPlaceName(query || "");
+                        setIsAddingPlace(true);
+                        setIsPlaceDropdownOpen(false);
+                      }}
+                      addNewLabel="Add new place"
+                    />
                   )}
                 </div>
               </div>
@@ -1542,7 +1490,7 @@ export default function ClientModal({
         </div>
 
         {/* Modal Action Footer */}
-        <div
+        <div className="directory-editor-footer"
           style={{
             padding: "14px 26px",
             borderTop: "1px solid #f1f5f9",
@@ -1584,7 +1532,7 @@ export default function ClientModal({
               onClick={() => handleSubmit()}
             >
               <Building2 size={15} />
-              <span>{isEdit ? "Save Changes" : "Save Client"}</span>
+              <span>{isEdit ? "Save Changes" : "Save organisation"}</span>
             </button>
           </div>
         </div>

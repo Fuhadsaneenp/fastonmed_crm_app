@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { House, Building2, CheckSquare2, Target, Grid2X2, ChevronRight, X, Users, FileText, Wrench, CalendarDays, Package, BarChart3, Settings, Briefcase, Megaphone, ShieldCheck, CircleDollarSign, MessageSquare, Award, ClipboardList } from "lucide-react";
+import { House, Building2, CheckSquare2, Target, Grid2X2, ChevronRight, Users, FileText, Wrench, CalendarDays, Package, BarChart3, Settings, Briefcase, Megaphone, ShieldCheck, CircleDollarSign, MessageSquare, Award, ClipboardList } from "lucide-react";
 
 const tabs = [
   { href: "/dashboard", label: "Home", icon: House },
@@ -59,7 +59,8 @@ export default function MobileNavigation() {
     <Dialog.Portal>
       <Dialog.Overlay className="app-menu-overlay" />
       <Dialog.Content className="app-module-menu">
-        <div className="app-menu-heading"><div><Dialog.Title>All sections</Dialog.Title><Dialog.Description>Your FastonMed workspace</Dialog.Description></div><Dialog.Close className="app-icon-button" aria-label="Close all sections"><X size={22}/></Dialog.Close></div>
+        <Dialog.Title hidden>All sections</Dialog.Title>
+        <Dialog.Description hidden>Your FastonMed workspace</Dialog.Description>
         <div className="app-menu-scroll">{groups.map(group => <section key={group.title}><h3>{group.title}</h3><div className="app-menu-group">{group.items.map(({ href, label, icon: Icon }) => <Link key={href} href={href} onClick={() => setOpen(false)}><span className="app-module-icon"><Icon size={20}/></span><span>{label}</span><ChevronRight size={17} aria-hidden="true"/></Link>)}</div></section>)}</div>
         <nav className="crm-mobile-nav app-tabbar app-menu-tabbar" aria-label="Main navigation">
           {tabs.map(({ href, label, icon: Icon }) => <Link key={href} href={href} onClick={() => setOpen(false)}><Icon size={23} strokeWidth={1.8} aria-hidden="true"/><span>{label}</span></Link>)}

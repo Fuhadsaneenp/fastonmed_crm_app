@@ -9,7 +9,6 @@ import {
   clearAllDummyData,
   type ZohoConfig,
 } from "@/lib/zoho-service";
-import { apiRequest } from "@/lib/api-client";
 
 const UAE_EMIRATES = [
   "Abu Dhabi",
@@ -217,9 +216,15 @@ return result;`;
         refreshToken?: string;
       } = {};
       if (syncTab === "connect") {
-        const stats = await apiRequest<{ clients: number; people: number; invoices: number }>("/api/zoho/sync", {
+        const response = await fetch("/api/zoho/sync", {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
         });
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.error || "Zoho Books sync failed");
+        const applied = applyZohoBooksData(result.data);
+        const stats = { clients: applied.clientsCount, people: applied.peopleCount, invoices: applied.invoicesCount };
         toast.success(`Synced ${stats.clients} organisations, ${stats.people} contacts, and ${stats.invoices} invoices from Zoho Books!`);
         setZohoConfig({
           ...getZohoConfig(),

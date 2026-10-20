@@ -101,11 +101,11 @@ export default function AddPersonModal({
     const selectedClient = clients.find((c) => c.id === clientId);
     onSave({
       name: name.trim(),
-      designation: designation.trim() || "Healthcare Specialist",
+      designation: designation.trim(),
       department,
       phone: phone.trim(),
       whatsapp: whatsapp.trim() || phone.trim(),
-      email: email.trim() || "contact@facility.ae",
+      email: email.trim() || "",
       linkedin: linkedin.trim() || undefined,
       clientId: clientId || undefined,
       clientName: selectedClient ? selectedClient.name : undefined,
@@ -118,7 +118,7 @@ export default function AddPersonModal({
   };
 
   return (
-    <div data-mobile-overlay="true"
+    <div className="directory-editor-overlay" data-mobile-overlay="true"
       style={{
         position: "fixed",
         inset: 0,
@@ -133,7 +133,7 @@ export default function AddPersonModal({
       onClick={onClose}
     >
       <div
-        className="card"
+        className="card directory-editor directory-person-editor"
         style={{
           width: "100%",
           maxWidth: 740, // Increased width as requested!
@@ -147,7 +147,7 @@ export default function AddPersonModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div
+        <div className="directory-editor-header"
           style={{
             padding: "18px 24px",
             borderBottom: "1px solid #f1f5f9",
@@ -175,7 +175,7 @@ export default function AddPersonModal({
             </div>
             <div>
               <h3 style={{ fontSize: 16.5, fontWeight: 700, margin: 0, color: "#0f172a", letterSpacing: "-0.01em" }}>
-                Add Healthcare Professional
+                New person
               </h3>
             </div>
           </div>
@@ -202,7 +202,7 @@ export default function AddPersonModal({
         </div>
 
         {/* Modal Form */}
-        <form onSubmit={handleSubmit} style={{ padding: "22px 26px", display: "flex", flexDirection: "column", gap: 16 }}>
+        <form className="directory-person-form" onSubmit={handleSubmit} style={{ padding: "22px 26px", display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Photo Upload Section */}
           <div
             style={{
@@ -326,14 +326,13 @@ export default function AddPersonModal({
           <div data-mobile-grid="stack" style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 14 }}>
             <div>
               <label className="form-label" style={{ fontSize: 12, fontWeight: 600, color: "#1e293b", marginBottom: 5 }}>
-                Designation / Title *
+                Designation / Title (optional)
               </label>
               <input
                 className="form-input"
                 placeholder="e.g. Chief Biomedical Engineer"
                 value={designation}
                 onChange={(e) => setDesignation(e.target.value)}
-                required
                 style={{ fontSize: 13, height: 38, borderRadius: 8 }}
               />
             </div>
@@ -522,7 +521,7 @@ export default function AddPersonModal({
           </div>
 
           {/* Action buttons */}
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
+          <div className="directory-editor-footer" style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
             <button
               type="button"
               className="btn btn-secondary"
@@ -543,7 +542,7 @@ export default function AddPersonModal({
                 boxShadow: "0 2px 8px rgba(0, 77, 102, 0.25)",
               }}
             >
-              Add Contact Person
+              Save person
             </button>
           </div>
         </form>

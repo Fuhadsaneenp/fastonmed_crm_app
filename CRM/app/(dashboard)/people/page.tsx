@@ -21,6 +21,7 @@ import {
   INITIAL_DEPARTMENTS,
 } from "@/lib/client-store";
 import toast from "react-hot-toast";
+import CustomLightSelect from "@/components/CustomLightSelect";
 import FacilityPicker from "@/components/FacilityPicker";
 import AddPersonModal from "@/components/AddPersonModal";
 import {
@@ -78,6 +79,14 @@ export default function PeoplePage() {
 
   // Modals
   const [selectedPerson, setSelectedPerson] = useState<ContactPerson | null>(null);
+  const openedPersonRef = useRef<string | null>(null);
+  useEffect(() => {
+    const personId = new URLSearchParams(window.location.search).get("person");
+    if (!personId || openedPersonRef.current === personId) return;
+    const person = people.find((entry) => entry.id === personId);
+    if (person) {setSelectedPerson(person);openedPersonRef.current = personId;}
+  }, [people]);
+
   const [mobilePeopleFilters, setMobilePeopleFilters] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingPerson, setEditingPerson] = useState<ContactPerson | null>(null);
@@ -475,7 +484,7 @@ export default function PeoplePage() {
 
       {/* Directory Content: List vs Grid */}
       {view === "list" ? (
-        <div className="card" style={{ padding: 0, overflow: "hidden", borderRadius: 10, border: "1px solid #e2e8f0", background: "#ffffff", boxShadow: "0 1px 3px rgba(0,0,0,0.02)" }}>
+        <div className="card people-list-shell" style={{ padding: 0, overflow: "hidden", borderRadius: 10, border: "1px solid #e2e8f0", background: "#ffffff", boxShadow: "0 1px 3px rgba(0,0,0,0.02)" }}>
           <div className="table-container" style={{ border: "none", overflowX: "auto" }}>
             <table className="people-mobile-list" data-mobile-cards="true" style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
@@ -1353,7 +1362,7 @@ function PersonDetailModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* MODAL HEADER: CLEAN MINIMAL LIGHT SURFACE */}
-        <div
+        <div className="person-profile-heading"
           style={{
             padding: "24px 28px 18px 28px",
             backgroundColor: "#ffffff",
@@ -1509,7 +1518,7 @@ function PersonDetailModal({
             </div>
 
             {/* Header Actions */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div className="person-profile-header-actions" style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <button
                 type="button"
                 style={{
@@ -1526,6 +1535,7 @@ function PersonDetailModal({
                   cursor: "pointer",
                   transition: "all 0.15s ease",
                 }}
+                aria-label="Edit profile" title="Edit profile"
                 onClick={onEdit}
               >
                 <Pencil size={13} />
@@ -1549,6 +1559,7 @@ function PersonDetailModal({
                     cursor: "pointer",
                     transition: "all 0.15s ease",
                   }}
+                  aria-label="Delete person"
                   onClick={onDelete}
                   title={`Delete ${person.name}`}
                 >
@@ -1588,9 +1599,9 @@ function PersonDetailModal({
           </div>
 
           {/* Quick Action Contact Pills */}
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <div id="person-contact-actions" className="person-contact-actions" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <a
-              href={`tel:${person.phone}`}
+              aria-label="Call" title="Call" href={`tel:${person.phone}`}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -1630,14 +1641,16 @@ function PersonDetailModal({
                   transition: "all 0.15s ease",
                 }}
               >
-                <MessageSquare size={12.5} style={{ color: "#059669" }} />
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{ color: "#059669" }} aria-hidden="true">
+                  <path d="M20.52 3.48A11.87 11.87 0 0 0 12.06 0C5.5 0 .16 5.34.16 11.9c0 2.1.55 4.15 1.59 5.96L.06 24l6.3-1.65a11.9 11.9 0 0 0 5.69 1.45h.01C18.62 23.8 24 18.46 24 11.9c0-3.18-1.24-6.17-3.48-8.42ZM12.06 21.8a9.86 9.86 0 0 1-5.03-1.38l-.36-.21-3.74.98 1-3.65-.24-.37A9.84 9.84 0 0 1 2.16 11.9C2.16 6.44 6.6 2 12.06 2a9.83 9.83 0 0 1 7.04 2.92A9.83 9.83 0 0 1 22 11.9c0 5.46-4.48 9.9-9.94 9.9Zm5.43-7.41c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.64.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.05-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.61-.91-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.87 1.21 3.07c.15.2 2.1 3.21 5.08 4.5.71.31 1.27.49 1.71.63.72.23 1.38.2 1.9.12.58-.09 1.76-.72 2.01-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35Z" />
+                </svg>
                 <span>WhatsApp</span>
               </a>
             )}
 
             {person.email && (
               <a
-                href={`mailto:${person.email}`}
+                aria-label="Email" title="Email" href={`mailto:${person.email}`}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -1654,7 +1667,7 @@ function PersonDetailModal({
                 }}
               >
                 <Mail size={12.5} style={{ color: "#0284c7" }} />
-                <span>{person.email}</span>
+                <span className="person-email-action-label">{person.email}</span>
               </a>
             )}
 
@@ -1686,7 +1699,7 @@ function PersonDetailModal({
         </div>
 
         {/* MODERN TAB STRIP */}
-        <div
+        <div className="person-profile-tabs" role="tablist" aria-label="Person profile sections"
           style={{
             display: "flex",
             borderBottom: "1px solid #e2e8f0",
@@ -1697,6 +1710,7 @@ function PersonDetailModal({
         >
           <button
             type="button"
+            role="tab" aria-selected={activeTab === "overview"}
             onClick={() => setActiveTab("overview")}
             style={{
               padding: "13px 4px",
@@ -1721,6 +1735,7 @@ function PersonDetailModal({
 
           <button
             type="button"
+            role="tab" aria-selected={activeTab === "products"}
             onClick={() => setActiveTab("products")}
             style={{
               padding: "13px 4px",
@@ -1740,7 +1755,7 @@ function PersonDetailModal({
             }}
           >
             <Package size={14} />
-            <span>Deals & quotes</span>
+            <span>Deals</span>
             <span
               style={{
                 fontSize: 11,
@@ -1757,6 +1772,7 @@ function PersonDetailModal({
 
           <button
             type="button"
+            role="tab" aria-selected={activeTab === "timeline"}
             onClick={() => setActiveTab("timeline")}
             style={{
               padding: "13px 4px",
@@ -1820,7 +1836,7 @@ function PersonDetailModal({
                       letterSpacing: "0.05em",
                     }}
                   >
-                    Direct Contact Information
+                    Contact details
                   </span>
                 </div>
 
@@ -1913,7 +1929,7 @@ function PersonDetailModal({
                       letterSpacing: "0.05em",
                     }}
                   >
-                    Healthcare Facility & Workplace
+                    Organisation & role
                   </span>
                 </div>
 
@@ -1938,7 +1954,7 @@ function PersonDetailModal({
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #edf2f7", paddingBottom: 8 }}>
                         <span style={{ color: "#64748b" }}>Installed Equipment:</span>
                         <span style={{ fontWeight: 600, color: "#047857" }}>
-                          {clientPurchases.length} Units (AED {totalEquipmentValue.toLocaleString()})
+                          {clientPurchases.length} {clientPurchases.length === 1 ? "unit" : "units"} (AED {totalEquipmentValue.toLocaleString()})
                         </span>
                       </div>
                     </>
@@ -1952,7 +1968,7 @@ function PersonDetailModal({
               </div>
 
               {/* Career History & Mobility Dossier */}
-              <div
+              <div className="person-career-section"
                 style={{
                   gridColumn: "span 2",
                   padding: "18px 20px",
@@ -1976,11 +1992,11 @@ function PersonDetailModal({
                         letterSpacing: "0.05em",
                       }}
                     >
-                      Career History & Facility Mobility
+                      Organisation history
                     </span>
                   </div>
                   <span style={{ fontSize: 12, color: "#64748b" }}>
-                    Mobility Status: <strong style={{ color: "#0f172a" }}>{person.status || "Active at Organisation"}</strong>
+                    Status: <strong style={{ color: "#0f172a" }}>{person.status || "Active at Organisation"}</strong>
                   </span>
                 </div>
 
@@ -2040,13 +2056,13 @@ function PersonDetailModal({
                   </div>
                 ) : (
                   <div style={{ fontSize: 12.5, color: "#64748b", padding: "6px 0" }}>
-                    Currently at <strong>{person.clientName || "Healthcare Provider"}</strong> with no prior hospital transfers recorded in the CRM.
+                    Currently at <strong>{person.clientName || "Healthcare Provider"}</strong> No previous organisations recorded.
                   </div>
                 )}
               </div>
 
               {/* Notes & Bio Dossier (Directly Editable Here) */}
-              <div
+              <div className="person-notes-section"
                 style={{
                   gridColumn: "span 2",
                   padding: "18px 20px",
@@ -2070,7 +2086,7 @@ function PersonDetailModal({
                         letterSpacing: "0.05em",
                       }}
                     >
-                      Notes &amp; Conversation Dossier
+                      Notes
                     </span>
                   </div>
 
@@ -2238,7 +2254,7 @@ function PersonDetailModal({
                       e.currentTarget.style.boxShadow = "none";
                     }}
                   >
-                    {person.notes || "No notes logged yet. Click here to add conversation details."}
+                    {person.notes || "No notes yet. Tap to add a note."}
                   </div>
                 )}
               </div>
@@ -2249,7 +2265,7 @@ function PersonDetailModal({
           {activeTab === "products" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
               {/* Product Selling KPI Summary Bar */}
-              <div data-mobile-grid="stack"
+              <div className="person-deal-summary" data-mobile-grid="stack"
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(3, 1fr)",
@@ -2265,7 +2281,7 @@ function PersonDetailModal({
                   }}
                 >
                   <span style={{ fontSize: 11.5, color: "#166534", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                    Total Commercial Volume
+                    Total value
                   </span>
                   <div style={{ fontSize: 22, fontWeight: 700, color: "#15803d", marginTop: 4, letterSpacing: "-0.01em" }}>
                     AED {(totalPipelineValue + totalEquipmentValue).toLocaleString()}
@@ -2282,10 +2298,10 @@ function PersonDetailModal({
                   }}
                 >
                   <span style={{ fontSize: 11.5, color: "#0369a1", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                    Active Product Quotes
+                    Quotes
                   </span>
                   <div style={{ fontSize: 22, fontWeight: 700, color: "#0284c7", marginTop: 4, letterSpacing: "-0.01em" }}>
-                    {personLeads.length} Deals
+                    {personLeads.length} {personLeads.length === 1 ? "deal" : "deals"}
                   </div>
                   <span style={{ fontSize: 11.5, color: "#0369a1" }}>AED {totalPipelineValue.toLocaleString()} in progress</span>
                 </div>
@@ -2299,7 +2315,7 @@ function PersonDetailModal({
                   }}
                 >
                   <span style={{ fontSize: 11.5, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                    Equipment Installed
+                    Equipment
                   </span>
                   <div style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", marginTop: 4, letterSpacing: "-0.01em" }}>
                     {clientPurchases.length} Units
@@ -2309,9 +2325,9 @@ function PersonDetailModal({
               </div>
 
               {/* Action: Add New Deal / Quote */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className="person-deal-actions" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <h4 style={{ fontSize: 14, fontWeight: 600, margin: 0, color: "#0f172a" }}>
-                  Associated Product Deals & Quotations
+                  Deals & quotations
                 </h4>
                 <button
                   type="button"
@@ -2331,7 +2347,7 @@ function PersonDetailModal({
                   onClick={() => setShowAddDealInline(!showAddDealInline)}
                 >
                   <Plus size={13} />
-                  <span>{showAddDealInline ? "Close Form" : "Log Product Quote"}</span>
+                  <span>{showAddDealInline ? "Close Form" : "Add quote"}</span>
                 </button>
               </div>
 
@@ -2566,7 +2582,7 @@ function PersonDetailModal({
           {activeTab === "timeline" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
               {/* Interactive Log Activity Form */}
-              <form
+              <form className="person-activity-form"
                 onSubmit={handleAddTimelineNote}
                 style={{
                   padding: "16px 18px",
@@ -2580,36 +2596,23 @@ function PersonDetailModal({
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: "#0f172a" }}>
-                    Log Interaction Note
+                    Add activity
                   </span>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    {(["call", "whatsapp", "meeting", "quote", "note"] as const).map((t) => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => setNewLogType(t)}
-                        style={{
-                          padding: "4px 9px",
-                          fontSize: 11.5,
-                          borderRadius: 6,
-                          border: newLogType === t ? "1px solid #0f766e" : "1px solid #e2e8f0",
-                          backgroundColor: newLogType === t ? "#0f766e" : "#ffffff",
-                          color: newLogType === t ? "#ffffff" : "#475569",
-                          cursor: "pointer",
-                          fontWeight: 500,
-                          textTransform: "capitalize",
-                          transition: "all 0.15s ease",
-                        }}
-                      >
-                        {t === "call" ? "Call" : t === "whatsapp" ? "WhatsApp" : t === "meeting" ? "Visit" : t === "quote" ? "Quote" : "Note"}
-                      </button>
-                    ))}
+                  <div className="person-activity-type-field">
+                    <label>Activity type</label>
+                    <CustomLightSelect value={newLogType} clearable={false} sheetTitle="Activity type"
+                      options={[{value:"call",label:"Phone call"},{value:"whatsapp",label:"WhatsApp message"},{value:"meeting",label:"Visit / meeting"},{value:"quote",label:"Quotation discussion"},{value:"note",label:"General note"}]}
+                      onChange={(value) => setNewLogType(value as typeof newLogType)} />
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
-                  <input
+                  <label htmlFor="person-activity-note">Notes</label>
+                  <textarea
+                    id="person-activity-note"
+                    rows={3}
                     className="form-input"
-                    placeholder={`e.g. Discussed new tender specs with ${person.name}, sending updated proposal...`}
+                    placeholder="Add details, outcome, or next steps…"
+                    aria-label="Activity note"
                     value={newLogNote}
                     onChange={(e) => setNewLogNote(e.target.value)}
                     style={{ fontSize: 12.5, borderRadius: 8 }}
@@ -2628,13 +2631,14 @@ function PersonDetailModal({
                       cursor: "pointer",
                     }}
                   >
-                    Add to Timeline
+                    Save activity
                   </button>
                 </div>
               </form>
 
+              <h3 className="person-activity-history-heading">Activity history</h3>
               {/* Chronological Vertical Timeline Feed */}
-              <div style={{ position: "relative", paddingLeft: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+              <div className="person-activity-feed" style={{ position: "relative", paddingLeft: 24, display: "flex", flexDirection: "column", gap: 16 }}>
                 {/* Vertical connecting line */}
                 <div
                   style={{

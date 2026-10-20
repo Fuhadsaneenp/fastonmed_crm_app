@@ -1,3 +1,5 @@
+import { filterRetiredRecords } from "@/lib/retired-records";
+import { withRetiredResponse } from "@/lib/retired-response";
 import { NextRequest, NextResponse } from "next/server";
 import { getDbPool } from "@/lib/db";
 import type { AMCContract } from "@/types";
@@ -30,6 +32,7 @@ function loadBackupFileContracts(): AMCContract[] | null {
 }
 
 function saveBackupFileContracts(contracts: AMCContract[]): void {
+  contracts = filterRetiredRecords("contracts", contracts);
   try {
     const dir = path.dirname(BACKUP_FILE);
     if (!fs.existsSync(dir)) {
@@ -83,6 +86,7 @@ async function getStoredContractsFromDb(pool: any): Promise<AMCContract[] | null
 }
 
 async function saveContractsToDb(pool: any, contracts: AMCContract[]): Promise<boolean> {
+  contracts = filterRetiredRecords("contracts", contracts);
   try {
     const companyId = await getValidCompanyId(pool);
     const jsonStr = JSON.stringify(contracts);
@@ -120,7 +124,7 @@ function getEffectiveContracts(): AMCContract[] {
 }
 
 // ─── GET: Fetch all contracts ───────────────────────────────────────────────
-export async function GET() {
+async function handleGET() {
   try {
     const pool = getDbPool();
     if (pool) {
@@ -163,7 +167,7 @@ export async function GET() {
 }
 
 // ─── POST: Add new contract OR sync client local storage up to MySQL ────────
-export async function POST(req: NextRequest) {
+async function handlePOST(req: NextRequest) {
   try {
     const body = await req.json();
     let currentContracts = getEffectiveContracts();
@@ -250,7 +254,7 @@ export async function POST(req: NextRequest) {
 }
 
 // ─── PUT: Update an existing contract ───────────────────────────────────────
-export async function PUT(req: NextRequest) {
+async function handlePUT(req: NextRequest) {
   try {
     const { id, data } = await req.json();
     if (!id || !data) {
@@ -302,7 +306,7 @@ export async function PUT(req: NextRequest) {
 }
 
 // ─── DELETE: Remove a contract ──────────────────────────────────────────────
-export async function DELETE(req: NextRequest) {
+async function handleDELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     let id = searchParams.get("id");
@@ -350,3 +354,8 @@ export async function DELETE(req: NextRequest) {
     );
   }
 }
+
+export const GET = withRetiredResponse(handleGET, "contracts", "contracts");
+export const POST = withRetiredResponse(handlePOST, "contracts", "contracts");
+export const PUT = withRetiredResponse(handlePUT, "contracts", "contracts");
+export const DELETE = withRetiredResponse(handleDELETE, "contracts", "contracts");

@@ -28,7 +28,7 @@ export default function AddTraderCompanyModal({ onClose, onCreated, initialName 
   const [modalContacts, setModalContacts] = useState<
     { id: string; name: string; role: string; phone: string; email: string }[]
   >([
-    { id: "c-1", name: "", role: "UAE Representative", phone: "", email: "" },
+    { id: "c-1", name: "", role: "", phone: "", email: "" },
   ]);
 
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -56,7 +56,7 @@ export default function AddTraderCompanyModal({ onClose, onCreated, initialName 
   }, [onClose]);
   return createPortal((
 
-        <div data-mobile-overlay="true"
+        <div className="trader-create-overlay" data-mobile-overlay="true"
           style={{
             position: "fixed",
             inset: 0,
@@ -71,7 +71,7 @@ export default function AddTraderCompanyModal({ onClose, onCreated, initialName 
           onClick={() => onClose()}
         >
           <div
-            ref={dialogRef} role="dialog" aria-modal="true" aria-label="Register Trader Company" className="card"
+            ref={dialogRef} role="dialog" aria-modal="true" aria-label="New Trader Company" className="card trader-create-dialog"
             style={{ width: "100%", maxWidth: 640, maxHeight: "92vh", overflow: "auto", padding: 0, borderRadius: 14 }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -87,31 +87,15 @@ export default function AddTraderCompanyModal({ onClose, onCreated, initialName 
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 8,
-                    backgroundColor: "#e0f2fe",
-                    color: "#004d66",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 18,
-                  }}
-                >
-                  🏢
-                </div>
                 <div>
                   <h2 style={{ fontSize: 17, fontWeight: 800, color: "#002735", margin: 0 }}>
-                    Register Trader Company
+                    New Trader Company
                   </h2>
-                  <p style={{ margin: "2px 0 0 0", fontSize: 12, color: "#64748b" }}>
-                    Configure provided equipment categories, delivery speed, and wholesale price range
-                  </p>
                 </div>
               </div>
               <button
+                type="button"
+                aria-label="Close add trader company"
                 onClick={() => onClose()}
                 style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "#94a3b8" }}
               >
@@ -135,10 +119,10 @@ export default function AddTraderCompanyModal({ onClose, onCreated, initialName 
 
                 const validContacts = modalContacts.filter((c) => c.name.trim() !== "");
                 const primary = validContacts[0] || {
-                  name: "Regional Manager",
-                  role: "UAE Representative",
-                  phone: "+971 4 000 0000",
-                  email: "info@supplier.ae",
+                  name: "",
+                  role: "",
+                  phone: "",
+                  email: "",
                 };
 
                 const newC: ProcurementCompany = {
@@ -155,10 +139,10 @@ export default function AddTraderCompanyModal({ onClose, onCreated, initialName 
                   productCount: 0,
                   totalVolume: 0,
                   contactPerson: primary.name,
-                  contactRole: primary.role || "UAE Representative",
-                  phone: primary.phone || "+971 4 000 0000",
-                  email: primary.email || "info@supplier.ae",
-                  website: (fd.get("website") as string) || "https://medical.ae",
+                  contactRole: primary.role || "",
+                  phone: primary.phone || "",
+                  email: primary.email || "",
+                  website: (fd.get("website") as string) || "",
                   flag: "🏢",
                   contacts: validContacts.map((c, idx) => ({
                     id: c.id,
@@ -180,16 +164,16 @@ export default function AddTraderCompanyModal({ onClose, onCreated, initialName 
             >
               <div>
                 <label className="form-label" style={{ fontSize: 12, marginBottom: 4 }}>Company Name *</label>
-                <input autoFocus defaultValue={initialName} name="name" className="form-input" placeholder="e.g. Olympus Middle East, Stryker Medical..." required style={{ fontSize: 13 }} />
+                <input autoFocus defaultValue={initialName} name="name" className="form-input" placeholder="Company name" required style={{ fontSize: 13 }} />
               </div>
 
               <div data-mobile-grid="stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
-                  <label className="form-label" style={{ fontSize: 12, marginBottom: 4 }}>Country of Origin</label>
+                  <label className="form-label" style={{ fontSize: 12, marginBottom: 4 }}>Country</label>
                   <input name="origin" className="form-input" placeholder="e.g. Germany, Japan, USA" style={{ fontSize: 13 }} />
                 </div>
                 <div>
-                  <label className="form-label" style={{ fontSize: 12, marginBottom: 4 }}>Partnership Level</label>
+                  <label className="form-label" style={{ fontSize: 12, marginBottom: 4 }}>Partnership</label>
                   <select name="partnership" className="form-input" style={{ fontSize: 13 }}>
                     <option value="Exclusive Partner">Exclusive Partner</option>
                     <option value="Authorized Distributor">Authorized Distributor</option>
@@ -202,7 +186,7 @@ export default function AddTraderCompanyModal({ onClose, onCreated, initialName 
               {/* Equipment Categories Provided */}
               <div>
                 <label className="form-label" style={{ fontSize: 12, marginBottom: 4 }}>
-                  Equipment Categories Provided * ({selectedCategories.length} selected)
+                  Equipment categories *
                 </label>
                 <select
                   className="form-input"
@@ -215,7 +199,7 @@ export default function AddTraderCompanyModal({ onClose, onCreated, initialName 
                   }}
                   style={{ fontSize: 13, marginBottom: selectedCategories.length > 0 ? 8 : 0 }}
                 >
-                  <option value="">-- Select category from dropdown --</option>
+                  <option value="">Select a category</option>
                   {categories.map((cat) => (
                     <option
                       key={cat}
@@ -284,7 +268,7 @@ export default function AddTraderCompanyModal({ onClose, onCreated, initialName 
               >
                 <div>
                   <label className="form-label" style={{ fontSize: 12, marginBottom: 4 }}>
-                    Guaranteed Delivery Speed / Lead Time *
+                    Delivery time *
                   </label>
                   <select
                     className="form-input"
@@ -303,7 +287,7 @@ export default function AddTraderCompanyModal({ onClose, onCreated, initialName 
                 <div data-mobile-grid="stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <div>
                     <label className="form-label" style={{ fontSize: 12, marginBottom: 4 }}>
-                      Wholesale Price Min (AED)
+                      Minimum price (AED)
                     </label>
                     <input
                       type="number"
@@ -316,7 +300,7 @@ export default function AddTraderCompanyModal({ onClose, onCreated, initialName 
                   </div>
                   <div>
                     <label className="form-label" style={{ fontSize: 12, marginBottom: 4 }}>
-                      Wholesale Price Max (AED)
+                      Maximum price (AED)
                     </label>
                     <input
                       type="number"
@@ -337,7 +321,7 @@ export default function AddTraderCompanyModal({ onClose, onCreated, initialName 
               </div>
 
               {/* Multiple Contact Persons / Representatives */}
-              <div
+              <div className="trader-contacts-section"
                 style={{
                   backgroundColor: "#f8fafc",
                   border: "1px solid #e2e8f0",
@@ -351,31 +335,16 @@ export default function AddTraderCompanyModal({ onClose, onCreated, initialName 
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <span style={{ fontSize: 13, fontWeight: 700, color: "#004d66" }}>
-                      👥 UAE Contact Persons & Representatives ({modalContacts.length})
+                      Contacts
                     </span>
-                    <p style={{ margin: "2px 0 0 0", fontSize: 11.5, color: "#64748b" }}>
-                      Add one or multiple contacts for this trader company
-                    </p>
                   </div>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => {
-                      setModalContacts([
-                        ...modalContacts,
-                        { id: `c-${Date.now()}`, name: "", role: "Sales Rep", phone: "", email: "" },
-                      ]);
-                    }}
-                    style={{ fontSize: 11.5, padding: "5px 10px", fontWeight: 700, color: "#004d66" }}
-                  >
-                    + Add Person
-                  </button>
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {modalContacts.map((contact, idx) => (
                     <div
                       key={contact.id}
+                      className="trader-contact-fields"
                       style={{
                         backgroundColor: "#ffffff",
                         border: "1px solid #e2e8f0",
@@ -397,7 +366,7 @@ export default function AddTraderCompanyModal({ onClose, onCreated, initialName 
                             borderRadius: 4,
                           }}
                         >
-                          {idx === 0 ? "★ Primary Contact Person" : `Person #${idx + 1}`}
+                          {idx === 0 ? "Primary contact" : `Contact ${idx + 1}`}
                         </span>
                         {modalContacts.length > 1 && (
                           <button
@@ -425,12 +394,12 @@ export default function AddTraderCompanyModal({ onClose, onCreated, initialName 
                       <div data-mobile-grid="stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                         <div>
                           <label className="form-label" style={{ fontSize: 11.5, marginBottom: 3 }}>
-                            Contact Person Name *
+                            Name *
                           </label>
                           <input
                             type="text"
                             className="form-input"
-                            placeholder="e.g. Eng. Liu Wei"
+                            placeholder="Contact name"
                             value={contact.name}
                             onChange={(e) => {
                               const updated = modalContacts.map((c) =>
@@ -444,7 +413,7 @@ export default function AddTraderCompanyModal({ onClose, onCreated, initialName 
                         </div>
                         <div>
                           <label className="form-label" style={{ fontSize: 11.5, marginBottom: 3 }}>
-                            Designation / Role
+                            Role
                           </label>
                           <input
                             type="text"
@@ -465,7 +434,7 @@ export default function AddTraderCompanyModal({ onClose, onCreated, initialName 
                       <div data-mobile-grid="stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                         <div>
                           <label className="form-label" style={{ fontSize: 11.5, marginBottom: 3 }}>
-                            Phone Number
+                            Phone
                           </label>
                           <input
                             type="text"
@@ -483,7 +452,7 @@ export default function AddTraderCompanyModal({ onClose, onCreated, initialName 
                         </div>
                         <div>
                           <label className="form-label" style={{ fontSize: 11.5, marginBottom: 3 }}>
-                            Email Address
+                            Email
                           </label>
                           <input
                             type="email"
@@ -524,16 +493,16 @@ export default function AddTraderCompanyModal({ onClose, onCreated, initialName 
                     textAlign: "center",
                   }}
                 >
-                  + Add Another Contact Person
+                  + Add contact
                 </button>
               </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8 }}>
+              <div className="trader-create-footer" style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8 }}>
                 <button type="button" className="btn btn-secondary" onClick={() => onClose()}>
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary" style={{ backgroundColor: "#004d66" }}>
-                  Register Trader Company
+                  Add trader company
                 </button>
               </div>
             </form>

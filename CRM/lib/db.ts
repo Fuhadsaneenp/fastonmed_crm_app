@@ -12,6 +12,9 @@ export function getDbPool() {
       uri: url,
       waitForConnections: true,
       connectionLimit: 5,
+      // Release idle sockets between bursts without reducing peak query capacity.
+      maxIdle: 1,
+      idleTimeout: 30_000,
       queueLimit: 0,
       ssl: {
         rejectUnauthorized: false,
@@ -265,8 +268,8 @@ export async function fetchOffices(): Promise<StemsOfficeItem[]> {
       isHQ: Boolean(r.isHQ),
       active: Boolean(r.active ?? true),
       timezone: r.timezone || "GMT +04:00 Dubai, Abu Dhabi",
-      phone: r.phone || "+971 4 000 0000",
-      email: r.email || "info@fastonmed.com",
+      phone: r.phone || "",
+      email: r.email || "",
       employeeCount: Number(r.employeeCount || 5),
     }));
   } catch (err) {

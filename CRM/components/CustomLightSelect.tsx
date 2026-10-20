@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronDown, Check, Plus, Search, X } from "lucide-react";
 
@@ -28,6 +29,7 @@ export interface CustomLightSelectProps {
   onAddNew?: (searchQuery?: string) => void;
   addNewLabel?: string;
   disabled?: boolean;
+  sheetTitle?: string;
 }
 
 export default function CustomLightSelect({
@@ -48,7 +50,17 @@ export default function CustomLightSelect({
   onAddNew,
   addNewLabel = "+ Add New...",
   disabled = false,
+  sheetTitle,
 }: CustomLightSelectProps) {
+  const [isMobile, setIsMobile] = useState(false);
+  const [fieldTitle, setFieldTitle] = useState("Select option");
+  const sheetRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(media.matches);
+    update(); media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -56,7 +68,7 @@ export default function CustomLightSelect({
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node) && !sheetRef.current?.contains(e.target as Node)) {
         setIsOpen(false);
       }
     }
@@ -79,7 +91,7 @@ export default function CustomLightSelect({
   const normalizedOptions: CustomSelectOption[] = options.map((opt) =>
     typeof opt === "string" ? { value: opt, label: opt } : opt
   );
-  const shouldShowSearch = searchable !== undefined ? searchable : normalizedOptions.length > 8;
+  const shouldShowSearch = isMobile || (searchable !== undefined ? searchable : normalizedOptions.length > 8);
 
   useEffect(() => {
     // Keep the phone keyboard closed until the user chooses to search.
@@ -118,7 +130,7 @@ export default function CustomLightSelect({
         disabled={disabled}
         aria-expanded={isOpen}
         aria-label={displayLabel}
-        onClick={() => { setSearchQuery(""); setIsOpen((prev) => !prev); }}
+        onClick={() => { setFieldTitle(sheetTitle || containerRef.current?.parentElement?.querySelector("label")?.textContent?.replace(/\*/g, "").trim() || placeholder.replace(/\.\.\.$/, "") || "Select option"); setSearchQuery(""); setIsOpen((prev) => !prev); }}
         style={{
           height: 38,
           width: "100%",
@@ -226,7 +238,26 @@ export default function CustomLightSelect({
         )}
 
 
-      {isOpen && (
+      {isOpen && isMobile && createPortal(
+        <div className="app-select-backdrop" onClick={() => setIsOpen(false)}>
+          <div ref={sheetRef} className="app-select-sheet" role="dialog" aria-modal="true" aria-label={`Select ${fieldTitle}`} onClick={(event) => event.stopPropagation()}>
+            <div className="app-select-sheet-header"><h2>{fieldTitle}</h2><button type="button" aria-label="Close options" onClick={() => setIsOpen(false)}><X size={20} /></button></div>
+            <div className="app-select-search"><Search size={18} /><input aria-label="Search options" placeholder="Search options" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} /></div>
+            <div className="app-select-list" role="listbox" aria-label={fieldTitle}>
+              {clearable && <button type="button" role="option" aria-selected={isAllOrDefault} onClick={() => {onChange(clearTarget);setIsOpen(false);}}><span className="app-select-check">{isAllOrDefault && <Check size={16}/>}</span><span>Not selected</span></button>}
+              {filteredOptions.map((option) => <button key={option.value} type="button" role="option" aria-selected={option.value === value} onClick={() => {onChange(option.value);setIsOpen(false);}}>
+                <span className="app-select-check">{option.value === value && <Check size={16}/>}</span><span className="app-select-option-label">{option.label}{option.subtext && <small>{option.subtext}</small>}</span>{option.badge && <small>{option.badge}</small>}
+              </button>)}
+              {filteredOptions.length === 0 && <p className="app-select-empty">No matching options</p>}
+            </div>
+            {(onAddNew || allowCustomValue) && <div className="app-select-add">
+              {onAddNew ? <button type="button" onClick={() => {setIsOpen(false);onAddNew(searchQuery.trim());}}><Plus size={18}/>{searchQuery.trim() ? `Add “${searchQuery.trim()}”` : addNewLabel.replace(/^\+\s*/, "")}</button> : <div><input aria-label="New option" placeholder="Enter a new option" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)}/><button type="button" disabled={!searchQuery.trim()} onClick={() => {onChange(searchQuery.trim());setIsOpen(false);}}><Plus size={18}/>Add option</button></div>}
+            </div>}
+          </div>
+        </div>, containerRef.current?.closest('[role="dialog"]') || document.body
+      )}
+
+      {isOpen && !isMobile && (
         <div className="crm-select-options"
           style={{
             position: "absolute",

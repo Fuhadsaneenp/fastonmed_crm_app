@@ -1,4 +1,5 @@
 "use client";
+import "./lead-form.css";
 import { useState, useEffect, useMemo } from "react";
 import { mockEmployees, mockClients, mockProducts } from "@/lib/mock-data";
 import {
@@ -54,8 +55,6 @@ import {
   Edit3,
   ChevronDown,
   Eye,
-  LayoutGrid,
-  List,
 } from "lucide-react";
 import { getZohoLiveQuotes } from "@/lib/zoho-live-quotes";
 
@@ -226,7 +225,6 @@ export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [view, setView] = useState<"kanban" | "list">("kanban");
   const [filterAssigned, setFilterAssigned] = useState("MY_LEADS");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterPriority, setFilterPriority] = useState("All");
@@ -1637,7 +1635,8 @@ export default function LeadsPage() {
 
         <button type="button" className="pipeline-mobile-filter-button" aria-expanded={mobilePipelineFilters} onClick={() => setMobilePipelineFilters(value => !value)}>{mobilePipelineFilters ? "Close filters" : "Filters"}</button>
         {/* Real Sales Rep Filter */}
-        <div style={{ minWidth: 175, maxWidth: 220 }}>
+        <div className="pipeline-owner-filter" style={{ minWidth: 175, maxWidth: 220 }}>
+          <span className="pipeline-filter-label">Assigned to</span>
           <CustomLightSelect
             value={filterAssigned}
             options={salesRepOptions}
@@ -1649,7 +1648,8 @@ export default function LeadsPage() {
         </div>
 
         {/* Priority Filter */}
-        <div style={{ minWidth: 145, maxWidth: 165 }}>
+        <div className="pipeline-priority-filter" style={{ minWidth: 145, maxWidth: 165 }}>
+          <span className="pipeline-filter-label">Priority</span>
           <CustomLightSelect
             value={filterPriority}
             options={priorityOptions}
@@ -1661,7 +1661,7 @@ export default function LeadsPage() {
         </div>
 
         {/* Core 6 Stages vs All toggle */}
-        <div
+        <div className="pipeline-stage-mode"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -1689,9 +1689,10 @@ export default function LeadsPage() {
               transition: "all 0.15s ease",
               whiteSpace: "nowrap",
             }}
+            aria-pressed={stageViewMode === "core"}
             onClick={() => setStageViewMode("core")}
           >
-            Core 6 Stages
+            Core stages
           </button>
           <button
             type="button"
@@ -1709,76 +1710,15 @@ export default function LeadsPage() {
               transition: "all 0.15s ease",
               whiteSpace: "nowrap",
             }}
+            aria-pressed={stageViewMode === "all"}
             onClick={() => setStageViewMode("all")}
           >
-            All Stages ({STAGES.length})
+            All stages ({STAGES.length})
           </button>
         </div>
 
         {/* Right action buttons */}
-        <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              background: "#f1f5f9",
-              padding: 3,
-              borderRadius: 8,
-              height: 36,
-              boxSizing: "border-box",
-              gap: 2,
-            }}
-          >
-            <button
-              type="button"
-              style={{
-                height: 30,
-                padding: "0 12px",
-                fontSize: 12,
-                fontWeight: view === "kanban" ? 700 : 500,
-                borderRadius: 6,
-                border: "none",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                backgroundColor: view === "kanban" ? "#004d66" : "transparent",
-                color: view === "kanban" ? "#ffffff" : "#64748b",
-                boxShadow: view === "kanban" ? "0 1px 3px rgba(0,77,102,0.25)" : "none",
-                transition: "all 0.15s ease",
-                whiteSpace: "nowrap",
-              }}
-              onClick={() => setView("kanban")}
-            >
-              <LayoutGrid size={13} />
-              <span>Kanban</span>
-            </button>
-            <button
-              type="button"
-              style={{
-                height: 30,
-                padding: "0 12px",
-                fontSize: 12,
-                fontWeight: view === "list" ? 700 : 500,
-                borderRadius: 6,
-                border: "none",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                backgroundColor: view === "list" ? "#004d66" : "transparent",
-                color: view === "list" ? "#ffffff" : "#64748b",
-                boxShadow: view === "list" ? "0 1px 3px rgba(0,77,102,0.25)" : "none",
-                transition: "all 0.15s ease",
-                whiteSpace: "nowrap",
-              }}
-              onClick={() => setView("list")}
-            >
-              <List size={13} />
-              <span>List</span>
-            </button>
-          </div>
-
+        <div className="pipeline-view-actions" style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           <button
             className="btn btn-primary"
             style={{
@@ -1801,11 +1741,11 @@ export default function LeadsPage() {
         </div>
       </div>
 
-      {view === "kanban" && <div className="mobile-pipeline-tabs" aria-label="Pipeline stages">
+      {<div className="mobile-pipeline-tabs" aria-label="Pipeline stages">
         {(stageViewMode === "core" ? coreStagesList : STAGES.map(stage => ({id:stage,label:STAGE_CONFIGS[stage]?.label || stage,matches:(value:PipelineStage) => value === stage}))).map(stage => <button key={stage.id} type="button" aria-pressed={mobilePipelineStage === stage.id} onClick={() => setMobilePipelineStage(stage.id)}>{stage.label}<span>{filteredLeads.filter(lead => stage.matches(lead.stage)).length}</span></button>)}
       </div>}
       {/* Kanban View matching Screenshot 2 */}
-      {view === "kanban" && (
+      {(
         <div className="mobile-pipeline-board"
           style={{
             display: "flex",
@@ -1947,6 +1887,21 @@ export default function LeadsPage() {
                           transition: "all 0.15s ease",
                         }}
                       >
+                        <div className="pipeline-summary">
+                          <div className="pipeline-summary-heading">
+                            <h3>{lead.clientName}</h3>
+                            {(lead.priority === "High" || lead.priority === "Critical") && <span className="pipeline-summary-priority">{lead.priority === "Critical" ? "Urgent" : "High"}</span>}
+                          </div>
+                          <div className="pipeline-summary-request"><span>Customer request</span><p className="pipeline-summary-requirement">{lead.product || "No requirement added yet"}</p></div>
+                          {lead.contactName && lead.contactName.trim().toLowerCase() !== lead.clientName.trim().toLowerCase() && <p className="pipeline-summary-contact">Contact person: {lead.contactName}</p>}
+                          <div className="pipeline-summary-value"><span>Estimated amount</span><strong>{lead.estimatedValue > 0 ? formatCurrency(lead.estimatedValue) : "Not added"}</strong></div>
+                          {lead.quotationNumber && <div className="pipeline-summary-quote"><FileText size={14} /><span>Quotation {lead.quotationNumber}</span></div>}
+                          <div className="pipeline-summary-footer">
+                            <span>{lead.nextFollowUp ? `Follow-up: ${lead.nextFollowUp}` : `Added ${dateInfo.text}`}</span>
+                            <button type="button" onClick={(event) => {event.stopPropagation();setSelectedLead(lead);}}>Open lead →</button>
+                          </div>
+                        </div>
+                        <div className="pipeline-desktop-content">
                         {/* Top Line: ● Client Name (left)  +  Priority Badge (right) */}
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
@@ -2213,6 +2168,7 @@ export default function LeadsPage() {
                             ))}
                           </div>
                         </div>
+                        </div>
                       </div>
                     );
                   })}
@@ -2261,270 +2217,6 @@ export default function LeadsPage() {
               </div>
             );
           })}
-        </div>
-      )}
-
-      {/* List View */}
-      {view === "list" && (
-        <div className="card" style={{ padding: 0 }}>
-          <div className="table-container">
-            <table data-mobile-cards="true">
-              <thead>
-                <tr>
-                  <th>Client</th>
-                  <th>Requirement</th>
-                  <th>Stage</th>
-                  <th>Value</th>
-                  <th>Assigned To</th>
-                  <th>Priority</th>
-                  <th>Source</th>
-                  <th>Next Follow-up</th>
-                  <th style={{ textAlign: "right", paddingRight: 18 }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredLeads.map((lead, rowIdx) => (
-                  <tr key={lead.id}>
-                    <td data-label="Client">
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>{lead.clientName}</div>
-                      <div style={{ fontSize: 11, color: "#94a3b8", display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
-                        <span>{lead.contactName || "—"}</span>
-                        {lead.contacts && lead.contacts.length > 1 && (
-                          <span
-                            title={lead.contacts.map((c) => `${c.name || "Contact"}${c.role ? ` (${c.role})` : ""}`).join(", ")}
-                            style={{
-                              fontSize: 9.5,
-                              fontWeight: 700,
-                              color: "#0369a1",
-                              backgroundColor: "#e0f2fe",
-                              border: "1px solid #bae6fd",
-                              padding: "0.5px 5px",
-                              borderRadius: 10,
-                              cursor: "default",
-                            }}
-                          >
-                            +{lead.contacts.length - 1} more
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td data-label="Requirement" style={{ fontSize: 13, maxWidth: 170 }}>
-                      <span
-                        style={{
-                          fontSize: 9.5,
-                          fontWeight: 700,
-                          color: "#0369a1",
-                          backgroundColor: "#f0f9ff",
-                          border: "1px solid #bae6fd",
-                          padding: "1px 5px",
-                          borderRadius: 4,
-                          display: "inline-block",
-                          marginBottom: 3,
-                          letterSpacing: "0.02em",
-                        }}
-                      >
-                        {lead.category || (lead.enquiryType === "Service" ? "Service Request" : "Medical Equipment")}
-                      </span>
-                      <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{lead.product}</div>
-                    </td>
-                    <td data-label="Stage">
-                      <span className={`badge ${getStatusColor(lead.stage)}`}>{lead.stage}</span>
-                    </td>
-                    <td data-label="Value" style={{ fontWeight: 700, color: "#059669" }}>{formatCurrency(lead.estimatedValue)}</td>
-                    <td data-label="Assigned To" style={{ fontSize: 13 }}>{lead.assignedTo}</td>
-                    <td data-label="Priority">
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: priorityDot[lead.priority] }} />
-                        <span style={{ fontSize: 12 }}>{lead.priority}</span>
-                      </div>
-                    </td>
-                    <td data-label="Source" style={{ fontSize: 12, color: "#64748b" }}>
-                      <div>{lead.source}</div>
-                      {lead.referredBy && (
-                        <div style={{ fontSize: 11, color: "#004d66", fontWeight: 600 }}>
-                          Ref: {lead.referredBy}
-                        </div>
-                      )}
-                    </td>
-                    <td data-label="Next Follow-up" style={{ fontSize: 12 }}>{lead.nextFollowUp || "—"}</td>
-                    <td data-label="Actions"
-                      style={{
-                        padding: "8px 18px",
-                        textAlign: "right",
-                        verticalAlign: "middle",
-                        whiteSpace: "nowrap",
-                        position: "relative",
-                        zIndex: activeActionLeadId === lead.id ? 40 : 1,
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div style={{ position: "relative", display: "inline-block", textAlign: "left" }}>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveActionLeadId(activeActionLeadId === lead.id ? null : lead.id);
-                          }}
-                          title="Actions"
-                          style={{
-                            padding: "4px 10px",
-                            fontSize: 12,
-                            fontWeight: 600,
-                            borderRadius: 6,
-                            border: activeActionLeadId === lead.id ? "1px solid #004d66" : "1px solid #cbd5e1",
-                            backgroundColor: activeActionLeadId === lead.id ? "#f0fdfa" : "#ffffff",
-                            color: activeActionLeadId === lead.id ? "#004d66" : "#334155",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 5,
-                            cursor: "pointer",
-                            transition: "all 0.15s ease",
-                            boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-                          }}
-                          onMouseEnter={(e) => {
-                            if (activeActionLeadId !== lead.id) {
-                              e.currentTarget.style.borderColor = "#94a3b8";
-                              e.currentTarget.style.backgroundColor = "#f8fafc";
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (activeActionLeadId !== lead.id) {
-                              e.currentTarget.style.borderColor = "#cbd5e1";
-                              e.currentTarget.style.backgroundColor = "#ffffff";
-                            }
-                          }}
-                        >
-                          <span>Actions</span>
-                          <ChevronDown
-                            size={12}
-                            style={{
-                              transform: activeActionLeadId === lead.id ? "rotate(180deg)" : "none",
-                              transition: "transform 0.15s ease",
-                            }}
-                          />
-                        </button>
-
-                        {activeActionLeadId === lead.id && (
-                          <div
-                            style={{
-                              position: "absolute",
-                              right: 0,
-                              ...(rowIdx >= filteredLeads.length - 2 && filteredLeads.length > 2
-                                ? { bottom: "calc(100% + 4px)" }
-                                : { top: "calc(100% + 4px)" }),
-                              zIndex: 100,
-                              backgroundColor: "#ffffff",
-                              border: "1px solid #e2e8f0",
-                              borderRadius: 8,
-                              boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.04)",
-                              minWidth: 155,
-                              padding: "4px",
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: 2,
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedLead(lead);
-                                setActiveActionLeadId(null);
-                              }}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 8,
-                                width: "100%",
-                                padding: "7px 10px",
-                                borderRadius: 6,
-                                border: "none",
-                                backgroundColor: "transparent",
-                                color: "#0f172a",
-                                fontSize: 12.5,
-                                fontWeight: 500,
-                                cursor: "pointer",
-                                textAlign: "left",
-                                transition: "background-color 0.15s ease",
-                              }}
-                              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f0fdfa")}
-                              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                            >
-                              <Eye size={13.5} color="#004d66" />
-                              <span>View Details</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenEditLead(lead);
-                                setActiveActionLeadId(null);
-                              }}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 8,
-                                width: "100%",
-                                padding: "7px 10px",
-                                borderRadius: 6,
-                                border: "none",
-                                backgroundColor: "transparent",
-                                color: "#0f172a",
-                                fontSize: 12.5,
-                                fontWeight: 500,
-                                cursor: "pointer",
-                                textAlign: "left",
-                                transition: "background-color 0.15s ease",
-                              }}
-                              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8fafc")}
-                              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                            >
-                              <Pencil size={13} color="#0f766e" />
-                              <span>Edit Lead</span>
-                            </button>
-
-                            <div style={{ height: 1, backgroundColor: "#f1f5f9", margin: "2px 0" }} />
-
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveActionLeadId(null);
-                                setLeadToDelete(lead);
-                              }}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 8,
-                                width: "100%",
-                                padding: "7px 10px",
-                                borderRadius: 6,
-                                border: "none",
-                                backgroundColor: "transparent",
-                                color: "#dc2626",
-                                fontSize: 12.5,
-                                fontWeight: 500,
-                                cursor: "pointer",
-                                textAlign: "left",
-                                transition: "background-color 0.15s ease",
-                              }}
-                              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#fef2f2")}
-                              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                            >
-                              <Trash2 size={13} color="#dc2626" />
-                              <span>Delete Lead</span>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </div>
       )}
 
@@ -2591,7 +2283,7 @@ export default function LeadsPage() {
                     <Building2 size={16} />
                   </div>
                   <h2 style={{ fontSize: 17, fontWeight: 700, color: "#0f172a", margin: 0, letterSpacing: "-0.01em" }}>
-                    {selectedLead.clientName}
+                    <span className="lead-detail-title">Lead details</span><span className="lead-detail-organisation">{selectedLead.clientName}</span>
                   </h2>
                   <span
                     style={{
@@ -2619,10 +2311,10 @@ export default function LeadsPage() {
                   </span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "#64748b", flexWrap: "wrap" }}>
-                  <span style={{ fontWeight: 500, color: "#334155" }}>{selectedLead.product}</span>
+                  <span className="lead-header-request" style={{ fontWeight: 500, color: "#334155" }}>{selectedLead.product}</span>
                   <span>•</span>
                   <span style={{ fontWeight: 700, color: "#059669" }}>
-                    {formatCurrency(selectedLead.estimatedValue)}
+                    {selectedLead.estimatedValue > 0 ? formatCurrency(selectedLead.estimatedValue) : "Amount not added"}
                   </span>
                   {selectedLead.quantity > 1 && (
                     <>
@@ -2697,80 +2389,28 @@ export default function LeadsPage() {
               </div>
             </div>
 
-            {/* Interactive Pipeline Stage Stepper */}
-            <div
-              style={{
-                backgroundColor: "#f8fafc",
-                borderBottom: "1px solid #e2e8f0",
-                padding: "10px 24px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-                flexWrap: "wrap",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                <span>Pipeline Stage:</span>
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", flex: 1, justifyContent: "flex-end" }}>
-                {(["New Lead", "Contacted", "Quotation Forwarded", "Approved", "Follow Up Later", "Rejected"] as PipelineStage[]).map((s) => {
-                  const isCurrent = selectedLead.stage === s;
-                  const stageColor = STAGE_COLORS[s] || "#0284c7";
-                  return (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => moveStage(selectedLead.id, s)}
-                      style={{
-                        padding: "5px 11px",
-                        borderRadius: 20,
-                        fontSize: 11.5,
-                        fontWeight: isCurrent ? 700 : 500,
-                        backgroundColor: isCurrent ? `${stageColor}18` : "#ffffff",
-                        color: isCurrent ? stageColor : "#475569",
-                        border: isCurrent ? `1.5px solid ${stageColor}` : "1px solid #e2e8f0",
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 5,
-                        transition: "all 0.15s ease",
-                        boxShadow: isCurrent ? `0 1px 3px ${stageColor}20` : "none",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isCurrent) {
-                          e.currentTarget.style.backgroundColor = "#f1f5f9";
-                          e.currentTarget.style.color = "#0f172a";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isCurrent) {
-                          e.currentTarget.style.backgroundColor = "#ffffff";
-                          e.currentTarget.style.color = "#475569";
-                        }
-                      }}
-                    >
-                      {isCurrent ? (
-                        <CheckCircle2 size={12} color={stageColor} />
-                      ) : (
-                        <span style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: `${stageColor}80` }} />
-                      )}
-                      <span>{s}</span>
-                    </button>
-                  );
-                })}
-              </div>
+            {/* Pipeline stage selector */}
+            <div className="lead-stage-selector">
+              <label htmlFor="lead-detail-stage">Pipeline stage</label>
+              <select
+                id="lead-detail-stage"
+                value={selectedLead.stage}
+                onChange={(event) => moveStage(selectedLead.id, event.target.value as PipelineStage)}
+              >
+                {STAGES.map((stage) => (
+                  <option key={stage} value={stage}>{STAGE_CONFIGS[stage]?.label || stage}</option>
+                ))}
+              </select>
             </div>
 
 
             {/* Modal Body */}
-            <div style={{ padding: "20px 24px", overflowY: "auto", overflowX: "hidden", display: "flex", flexDirection: "column", gap: 16 }}>
+            <div className="lead-details-body" style={{ padding: "20px 24px", overflowY: "auto", overflowX: "hidden", display: "flex", flexDirection: "column", gap: 16 }}>
               {/* 2 Main Columns */}
               <div data-mobile-grid="stack" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: 16 }}>
                 
                 {/* Card 1: Facility & Stakeholder */}
-                <div
+                <div className="lead-contact-card"
                   style={{
                     backgroundColor: "#ffffff",
                     borderRadius: 12,
@@ -2801,7 +2441,7 @@ export default function LeadsPage() {
                         <Building2 size={13} />
                       </div>
                       <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#004d66" }}>
-                        Facility & Client Contact
+                        Contact
                       </span>
                     </div>
                     <span
@@ -2861,7 +2501,7 @@ export default function LeadsPage() {
                   </div>
 
                   {/* Communication Channels */}
-                  <div data-mobile-grid="stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: "auto" }}>
+                  <div className="lead-contact-channels" data-mobile-grid="stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 0 }}>
                     {/* Phone / WhatsApp */}
                     <a
                       href={selectedLead.phone ? `tel:${selectedLead.phone}` : undefined}
@@ -2910,7 +2550,7 @@ export default function LeadsPage() {
                     </a>
 
                     {/* Official Email */}
-                    <a
+                    {selectedLead.email && selectedLead.email.toLowerCase() !== "procurement@facility.ae" && <a
                       href={selectedLead.email ? `mailto:${selectedLead.email}` : undefined}
                       style={{
                         padding: "10px 12px",
@@ -2949,17 +2589,17 @@ export default function LeadsPage() {
                         <Mail size={13} />
                       </div>
                       <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 500 }}>Official Email</div>
+                        <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 500 }}>Email</div>
                         <div style={{ fontSize: 11.5, fontWeight: 600, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                           {selectedLead.email || "—"}
                         </div>
                       </div>
-                    </a>
+                    </a>}
                   </div>
 
                   {/* Multiple Contacts List */}
                   {selectedLead.contacts && selectedLead.contacts.length > 0 && (
-                    <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px dashed #e2e8f0" }}>
+                    <div className="lead-additional-contacts" style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid #e2e8f0" }}>
                       <div
                         style={{
                           fontSize: 11,
@@ -2974,7 +2614,7 @@ export default function LeadsPage() {
                         }}
                       >
                         <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                          <Users size={12} color="#0284c7" /> Facility Contacts & Stakeholders
+                          Contacts
                         </span>
                         <span
                           style={{
@@ -3113,7 +2753,7 @@ export default function LeadsPage() {
                         {selectedLead.enquiryType === "Service" ? <Wrench size={13} /> : <Stethoscope size={13} />}
                       </div>
                       <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#004d66" }}>
-                        {selectedLead.enquiryType === "Service" ? "Service & Requirement" : "Equipment & Model"}
+                        {selectedLead.enquiryType === "Service" ? "Service & Requirement" : "Requirement"}
                       </span>
                     </div>
                     <span
@@ -3141,7 +2781,7 @@ export default function LeadsPage() {
                     }}
                   >
                     <div style={{ fontSize: 10, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 3 }}>
-                      {selectedLead.enquiryType === "Service" ? "Service Requirement" : "Model / Product Specification"}
+                      {selectedLead.enquiryType === "Service" ? "Service Requirement" : "Customer request"}
                     </div>
                     <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0f172a", lineHeight: 1.35 }}>
                       {selectedLead.product}
@@ -3483,6 +3123,8 @@ export default function LeadsPage() {
             >
               <button
                 type="button"
+                aria-label="Delete lead"
+                title="Delete lead"
                 onClick={() => {
                   setLeadToDelete(selectedLead);
                 }}
@@ -4206,7 +3848,7 @@ export default function LeadsPage() {
             className="card lead-create-dialog"
             style={{
               width: "100%",
-              maxWidth: 940,
+              maxWidth: 1120,
               maxHeight: "90vh",
               display: "flex",
               flexDirection: "column",
@@ -4390,8 +4032,8 @@ export default function LeadsPage() {
 
                 const primaryContact = validContacts.find((c) => c.isPrimary) || validContacts[0];
                 const resolvedContactName = primaryContact?.name || leadContactName.trim() || (personEntity ? personEntity.name : "Key Contact");
-                const resolvedPhone = primaryContact?.phone || leadPhone.trim() || personEntity?.phone || "+971 50 000 0000";
-                const resolvedEmail = primaryContact?.email || leadEmail.trim() || personEntity?.email || "procurement@facility.ae";
+                const resolvedPhone = primaryContact?.phone || leadPhone.trim() || personEntity?.phone || "";
+                const resolvedEmail = primaryContact?.email || leadEmail.trim() || personEntity?.email || "";
 
                 // Automatically register / sync the client into the Clients directory!
                 const syncedClient = addClientFromLead({
@@ -4487,8 +4129,8 @@ export default function LeadsPage() {
                   createdById: currentUser.name ? `emp-${currentUser.name.toLowerCase().split(" ")[0]}` : "emp-fuhad",
                   notes: leadNotes.trim() || (fd.get("notes") as string)?.trim() || "",
                   nextFollowUp: leadFollowUp || (fd.get("nextFollowUp") as string) || new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
-                  createdAt: new Date().toISOString().split("T")[0],
-                  updatedAt: new Date().toISOString().split("T")[0],
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
                 };
 
                 const cleanLeads = leads.filter((l) => !isDummyLead(l));
@@ -4510,7 +4152,7 @@ export default function LeadsPage() {
                   gap: 18,
                 }}
               >
-                <div data-mobile-grid="stack"
+                <div className="lead-form-sections" data-mobile-grid="stack"
                   style={{
                     display: "grid",
                     gridTemplateColumns: "1fr 1fr",
@@ -4519,7 +4161,7 @@ export default function LeadsPage() {
                   }}
                 >
                   {/* Column 1: Client & contact */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  <div className="lead-form-section" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, paddingBottom: 8, borderBottom: "1px solid #f1f5f9" }}>
                       <span
                         style={{
@@ -4538,7 +4180,7 @@ export default function LeadsPage() {
                         1
                       </span>
                       <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "#0f172a" }}>
-                        Healthcare Facility & Contact
+                        Client & contacts
                       </span>
                     </div>
 
@@ -4548,7 +4190,7 @@ export default function LeadsPage() {
                         <label style={{ fontSize: 12, fontWeight: 600, color: "#1e293b", margin: 0 }}>
                           Choose client <span style={{ color: "#ef4444" }}>*</span>
                         </label>
-                        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                        <div className="lead-client-create-actions" style={{ display: "flex", alignItems: "center", gap: 5 }}>
                           <button
                             type="button"
                             onClick={openAddOrgModal}
@@ -4571,7 +4213,7 @@ export default function LeadsPage() {
                             title="Add Healthcare Organisation / Facility"
                           >
                             <Building2 size={12} strokeWidth={2.2} />
-                            <span>+ Org</span>
+                            <span>Add organisation</span>
                           </button>
                           <button
                             type="button"
@@ -4595,7 +4237,7 @@ export default function LeadsPage() {
                             title="Add Doctor or Individual Contact"
                           >
                             <User size={12} strokeWidth={2.2} />
-                            <span>+ Person</span>
+                            <span>Add person</span>
                           </button>
                         </div>
                       </div>
@@ -5066,37 +4708,7 @@ export default function LeadsPage() {
                         </div>
                       ))}
 
-                      {/* Add Another Contact Button */}
-                      <button
-                        type="button"
-                        onClick={() => addContact()}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: 6,
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: "#004d66",
-                          backgroundColor: "#f8fafc",
-                          border: "1px dashed #cbd5e1",
-                          borderRadius: 8,
-                          padding: "8px",
-                          cursor: "pointer",
-                          transition: "all 0.15s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f0f9ff";
-                          e.currentTarget.style.borderColor = "#004d66";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f8fafc";
-                          e.currentTarget.style.borderColor = "#cbd5e1";
-                        }}
-                      >
-                        <UserPlus size={14} />
-                        <span>+ Add Another Contact Person (Doctor, Biomedical, Procurement...)</span>
-                      </button>
+
                     </div>
 
                     <div>
@@ -5145,8 +4757,8 @@ export default function LeadsPage() {
                     </div>
                   </div>
 
-                  {/* Column 2: Requirement & Deal Pipeline */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  {/* Column 2: Requirement & ownership */}
+                  <div className="lead-form-section" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, paddingBottom: 8, borderBottom: "1px solid #f1f5f9" }}>
                       <span
                         style={{
@@ -5165,7 +4777,7 @@ export default function LeadsPage() {
                         2
                       </span>
                       <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "#0f172a" }}>
-                        Requirement & Deal Pipeline
+                        Requirement & ownership
                       </span>
                     </div>
 
@@ -5233,7 +4845,7 @@ export default function LeadsPage() {
                         {/* Category Dropdown (connected to Products Catalog) */}
                         <div>
                           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#1e293b", marginBottom: 5 }}>
-                            Equipment Category (from Products) <span style={{ color: "#ef4444" }}>*</span>
+                            Equipment category <span style={{ color: "#ef4444" }}>*</span>
                           </label>
                           <CustomLightSelect
                             value={selectedCategory}
@@ -5516,7 +5128,7 @@ export default function LeadsPage() {
                       </div>
                     )}
 
-                    <div data-mobile-grid="stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <div className="lead-stage-priority" data-mobile-grid="stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                       <div>
                         <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#1e293b", marginBottom: 5 }}>
                           Initial Stage
@@ -5533,17 +5145,15 @@ export default function LeadsPage() {
                         <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#1e293b", marginBottom: 5 }}>
                           Priority
                         </label>
-                        <CustomLightSelect
-                          value={leadPriority}
-                          onChange={(val) => setLeadPriority(val as any)}
-                          options={[
-                            { value: "Low", label: "🟢 Low" },
-                            { value: "Medium", label: "🟡 Medium" },
-                            { value: "High", label: "🟠 High" },
-                            { value: "Critical", label: "🔴 Critical" },
-                          ]}
-                          buttonStyle={{ height: 38, fontSize: 13, width: "100%", borderRadius: 8 }}
-                        />
+                        <div className="lead-priority-options" role="group" aria-label="Lead priority">
+                          {(["Low", "Medium", "High", "Critical"] as const).map((priority) => (
+                            <button key={priority} type="button" aria-pressed={leadPriority === priority}
+                              data-priority={priority} onClick={() => setLeadPriority(priority)}>
+                              <span className="priority-choice-dot" aria-hidden="true" />
+                              {priority}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
 

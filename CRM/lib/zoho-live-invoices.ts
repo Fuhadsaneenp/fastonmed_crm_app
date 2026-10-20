@@ -54,20 +54,39 @@ export function saveZohoLiveInvoices(invoices: Invoice[]): void {
 
 export async function fetchZohoLiveInvoicesFromServer(forceSync = false): Promise<Invoice[]> {
   if (typeof window === "undefined") return ZOHO_LIVE_INVOICES;
+  if (forceSync) {
+    let webhookUrl: string | undefined;
+    try {
+      webhookUrl = JSON.parse(localStorage.getItem("fastonmed_zoho_config") || "{}").webhookUrl;
+    } catch {}
+    const response = await fetch("/api/zoho/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ webhookUrl, resource: "invoices" }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || "Zoho invoice sync failed");
+    }
+    if (Array.isArray(result.invoices)) {
+      localStorage.setItem("fastonmed_zoho_live_invoices", JSON.stringify(result.invoices));
+      return result.invoices;
+    }
+  }
   try {
-    const res = await fetch(`/api/invoices?sync=${forceSync ? "1" : "0"}`);
+    const res = await fetch("/api/invoices?sync=0", { cache: "no-store" });
     if (res.ok) {
       const data = await res.json();
       const list = data?.invoices || data?.data;
-      if (Array.isArray(list) && list.length > 0) {
+      if (Array.isArray(list)) {
         localStorage.setItem("fastonmed_zoho_live_invoices", JSON.stringify(list));
-        window.dispatchEvent(new Event("fastonmed_invoices_updated"));
         return list;
       }
     }
   } catch (err) {
     console.warn("Failed to fetch invoices from /api/invoices:", err);
   }
+  if (forceSync) throw new Error("Zoho sync completed, but refreshed invoices could not be loaded");
   return getZohoLiveInvoices();
 }
 

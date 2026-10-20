@@ -1,3 +1,4 @@
+import { filterRetiredRecords, getRetiredIds } from "@/lib/retired-records";
 import type { AMCContract } from "@/types";
 
 const STORAGE_KEY = "fastonmed_amc_contracts";
@@ -20,7 +21,7 @@ function notifyContractsUpdated(): void {
   }
 }
 
-export function getStoredContracts(): AMCContract[] {
+function readCachedgetStoredContracts(): AMCContract[] {
   if (typeof window === "undefined") return INITIAL_HASHIM_CONTRACTS;
 
   try {
@@ -91,7 +92,7 @@ export async function syncLiveContractsFromApi(): Promise<AMCContract[]> {
         ? json.data
         : [];
 
-      if (list.length > 0) {
+      if (Array.isArray(json?.contracts) || Array.isArray(json)) {
         const realContracts = list.filter((c) => Boolean(c?.id) && !isLegacyMock(c));
         saveStoredContracts(realContracts);
         notifyContractsUpdated();
@@ -108,7 +109,7 @@ export async function syncLiveContractsFromApi(): Promise<AMCContract[]> {
     if (getRes.ok) {
       const getJson = await getRes.json();
       const list = Array.isArray(getJson?.contracts) ? getJson.contracts : [];
-      if (list.length > 0) {
+      if (Array.isArray(getJson?.contracts)) {
         const real = list.filter((c: AMCContract) => Boolean(c?.id) && !isLegacyMock(c));
         saveStoredContracts(real);
         notifyContractsUpdated();
@@ -202,4 +203,8 @@ export async function deleteStoredContract(id: string): Promise<AMCContract[]> {
     }
   }
   return next;
+}
+
+export function getStoredContracts(): AMCContract[] {
+  return filterRetiredRecords("contracts", readCachedgetStoredContracts());
 }

@@ -366,9 +366,9 @@ export default function TraderCompanyProductsTab({ client }: { client: Client })
   }, [products]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+    <div className="trader-products-panel" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       {/* Top Filter & Action Bar */}
-      <div
+      <div className="trader-products-toolbar"
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -482,7 +482,7 @@ export default function TraderCompanyProductsTab({ client }: { client: Client })
       </div>
 
       {/* Results Summary Bar (matching main products page) */}
-      <div
+      <div className="trader-products-summary"
         style={{
           display: "flex",
           justifyContent: "space-between",

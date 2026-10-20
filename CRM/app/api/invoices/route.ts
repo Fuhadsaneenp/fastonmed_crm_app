@@ -287,7 +287,7 @@ async function getResolvedInvoices(allowLiveSync = false): Promise<Invoice[]> {
   // If live sync is requested or periodic check
   if (allowLiveSync) {
     const synced = await trySyncFromZohoBooks(baseInvoices);
-    if (synced && synced.length > baseInvoices.length) {
+    if (synced) {
       baseInvoices = synced;
       saveInvoicesToDb(pool, synced).catch(() => {});
       saveBackupFileInvoices(synced);

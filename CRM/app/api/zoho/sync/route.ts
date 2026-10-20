@@ -12,6 +12,7 @@ const SETTING_KEY_QUOTATIONS = "fastonmed_quotations_v1";
 const SETTING_KEY_ZOHO_CONFIG = "fastonmed_zoho_config_v1";
 
 type ZohoSyncRequest = {
+  resource?: "invoices";
   webhookUrl?: string;
   zohoData?: unknown;
   organizationId?: string;
@@ -62,7 +63,8 @@ function unwrapZohoFunctionOutput(payload: unknown): unknown {
 }
 
 async function fetchZohoBooksJson(path: string, accessToken: string, organizationId?: string) {
-  const url = new URL(`https://www.zohoapis.com/books/v3/${path}`);
+  const apiBase = (process.env.ZOHO_API_BASE_URL || "https://www.zohoapis.com").replace(/\/$/, "");
+  const url = new URL(`${apiBase}/books/v3/${path}`);
   if (organizationId) url.searchParams.set("organization_id", organizationId);
 
   const resp = await fetch(url.toString(), {
@@ -70,6 +72,8 @@ async function fetchZohoBooksJson(path: string, accessToken: string, organizatio
       Authorization: `Zoho-oauthtoken ${accessToken}`,
       Accept: "application/json",
     },
+    cache: "no-store",
+    signal: AbortSignal.timeout(20000),
   });
 
   const data = await readJsonOrText(resp);
@@ -84,8 +88,8 @@ async function fetchZohoBooksJson(path: string, accessToken: string, organizatio
   return { ok: true, status: resp.status, data };
 }
 
-async function persistZohoInvoices(rawInvoices: any[]) {
-  if (!Array.isArray(rawInvoices) || rawInvoices.length === 0) return;
+async function persistZohoInvoices(rawInvoices: any[]): Promise<Invoice[]> {
+  if (!Array.isArray(rawInvoices)) throw new Error("Zoho did not return an invoice list");
   try {
     const pool = getDbPool();
     let existing: Invoice[] = [];
@@ -157,9 +161,16 @@ async function persistZohoInvoices(rawInvoices: any[]) {
     );
 
     const backupFile = path.join(process.cwd(), "data", "invoices_store.json");
-    fs.writeFileSync(backupFile, JSON.stringify(merged, null, 2), "utf-8");
+    try {
+      fs.mkdirSync(path.dirname(backupFile), { recursive: true });
+      fs.writeFileSync(backupFile, JSON.stringify(merged, null, 2), "utf-8");
+    } catch {
+      console.warn("Invoice database saved; optional local backup is unavailable");
+    }
+    return merged;
   } catch (err) {
     console.warn("Failed to persist Zoho invoices to DB:", err);
+    throw new Error("Zoho invoices were fetched but could not be saved");
   }
 }
 
@@ -170,8 +181,9 @@ export async function POST(req: Request) {
     const pool = getDbPool();
 
     // Check DB for stored Zoho config if not provided in body
+    let savedConfig: Record<string, unknown> = {};
     let webhookUrl = body.webhookUrl;
-    let organizationId = body.organizationId || cookieStore.get(ZOHO_ORG_ID_COOKIE)?.value;
+    let organizationId = body.organizationId || process.env.ZOHO_ORGANIZATION_ID || cookieStore.get(ZOHO_ORG_ID_COOKIE)?.value;
     let clientId = body.clientId || process.env.ZOHO_CLIENT_ID;
     let clientSecret = body.clientSecret || process.env.ZOHO_CLIENT_SECRET;
     let refreshToken = body.refreshToken || cookieStore.get(ZOHO_REFRESH_TOKEN_COOKIE)?.value || process.env.ZOHO_REFRESH_TOKEN;
@@ -183,6 +195,7 @@ export async function POST(req: Request) {
       );
       if (cfgRows && cfgRows[0]?.value) {
         const parsedCfg = typeof cfgRows[0].value === "string" ? JSON.parse(cfgRows[0].value) : cfgRows[0].value;
+        savedConfig = parsedCfg || {};
         if (!webhookUrl && parsedCfg?.webhookUrl) webhookUrl = parsedCfg.webhookUrl;
         if (!organizationId && parsedCfg?.organizationId) organizationId = parsedCfg.organizationId;
         if (!clientId && parsedCfg?.clientId) clientId = parsedCfg.clientId;
@@ -198,6 +211,7 @@ export async function POST(req: Request) {
         const companyId = compRows[0]?.id || "cmrtifqe00002ty4zqy0vdpsr";
         const now = new Date();
         const cfgObj = {
+          ...savedConfig,
           webhookUrl: body.webhookUrl.trim(),
           organizationId: organizationId || "",
           updatedAt: now.toISOString(),
@@ -247,14 +261,14 @@ export async function POST(req: Request) {
       }
 
       const delugeResult = unwrapZohoFunctionOutput(await readJsonOrText(resp));
-      if (delugeResult && typeof delugeResult === "object") {
-        const rawInvoices = (delugeResult as any).invoices || (Array.isArray(delugeResult) ? delugeResult : null);
-        if (Array.isArray(rawInvoices) && rawInvoices.length > 0) {
-          await persistZohoInvoices(rawInvoices);
-        }
+      const rawInvoices = Array.isArray(delugeResult) ? delugeResult : (delugeResult as any)?.invoices;
+      if (!Array.isArray(rawInvoices)) {
+        throw new Error("Zoho function did not return invoices. Check the saved function connection.");
       }
+      const invoices = await persistZohoInvoices(rawInvoices);
 
       return NextResponse.json({
+        invoices,
         success: true,
         source: "zoho_deluge_webhook",
         data: delugeResult,
@@ -270,10 +284,13 @@ export async function POST(req: Request) {
         client_secret: clientSecret,
         grant_type: "refresh_token",
       });
-      const tokenResp = await fetch("https://accounts.zoho.com/oauth/v2/token", {
+      const accountsUrl = (process.env.ZOHO_ACCOUNTS_URL || "https://accounts.zoho.com").replace(/\/$/, "");
+      const tokenResp = await fetch(`${accountsUrl}/oauth/v2/token`, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: tokenParams.toString(),
+        cache: "no-store",
+        signal: AbortSignal.timeout(20000),
       });
       const tokenData = (await readJsonOrText(tokenResp)) as ZohoTokenResponse;
       if (!tokenData.access_token) {
@@ -319,10 +336,22 @@ export async function POST(req: Request) {
       }
 
       // 2. Fetch Invoices
-      const invoicesResult = await fetchZohoBooksJson("invoices", accessToken, resolvedOrganizationId);
-      const invoicesJson = (invoicesResult.ok ? invoicesResult.data : {}) as { invoices?: any[] };
-      if (Array.isArray(invoicesJson.invoices) && invoicesJson.invoices.length > 0) {
-        await persistZohoInvoices(invoicesJson.invoices);
+      const allInvoices: any[] = [];
+      let page = 1;
+      while (true) {
+        const result = await fetchZohoBooksJson(`invoices?page=${page}&per_page=200`, accessToken, resolvedOrganizationId);
+        const payload = result.data as { code?: number; message?: string; invoices?: any[]; page_context?: { has_more_page?: boolean } };
+        if (!result.ok || (payload.code !== undefined && payload.code !== 0) || !Array.isArray(payload.invoices)) {
+          throw new Error(payload.message || "Zoho could not return invoices");
+        }
+        allInvoices.push(...payload.invoices);
+        if (!payload.page_context?.has_more_page) break;
+        page += 1;
+      }
+      const invoicesJson = { invoices: allInvoices };
+      const invoices = await persistZohoInvoices(allInvoices);
+      if (body.resource === "invoices") {
+        return NextResponse.json({ success: true, source: "zoho_direct_api", invoices, count: invoices.length });
       }
 
       // 3. Fetch Contacts
@@ -336,6 +365,7 @@ export async function POST(req: Request) {
       return NextResponse.json({
         success: true,
         source: "zoho_direct_api",
+        invoices,
         data: {
           contacts: contactsJson.contacts || [],
           invoices: invoicesJson.invoices || [],
@@ -345,37 +375,10 @@ export async function POST(req: Request) {
       });
     }
 
-    // Mode 4: Live Connected Database Cache (Zoho Books fastonmedcrm data)
-    let dbInvoices: any[] = [];
-    try {
-      const [invRows]: any = await pool.query(
-        "SELECT `value` FROM CompanySetting WHERE `key` = ? ORDER BY updatedAt DESC LIMIT 1",
-        [SETTING_KEY_INVOICES]
-      );
-      if (invRows && invRows[0]?.value) {
-        const parsed = typeof invRows[0].value === "string" ? JSON.parse(invRows[0].value) : invRows[0].value;
-        if (Array.isArray(parsed)) dbInvoices = parsed;
-      }
-    } catch {}
-
-    if (dbInvoices.length === 0) {
-      try {
-        const backupFile = path.join(process.cwd(), "data", "invoices_store.json");
-        if (fs.existsSync(backupFile)) {
-          const parsed = JSON.parse(fs.readFileSync(backupFile, "utf-8"));
-          if (Array.isArray(parsed)) dbInvoices = parsed;
-        }
-      } catch {}
-    }
-
     return NextResponse.json({
-      success: true,
-      source: "zoho_connected_database",
-      data: {
-        invoices: dbInvoices,
-        count: dbInvoices.length,
-      },
-    });
+      success: false,
+      error: "The saved Zoho connection is unavailable on this server. Check Zoho Books connection in Settings.",
+    }, { status: 409 });
   } catch (err) {
     return NextResponse.json(
       {

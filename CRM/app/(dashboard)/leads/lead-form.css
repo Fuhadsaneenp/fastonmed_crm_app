@@ -1,0 +1,29 @@
+/* Keep the lead editor spacious without changing other CRM dialogs. */
+.lead-form-section { min-width: 0; }
+.lead-create-form .lead-priority-options button { white-space: nowrap; min-width: 0; }
+@media (min-width: 768px) {
+  .lead-create-dialog { border-radius: 20px !important; }
+  .lead-create-dialog > div:first-child { padding: 24px 32px !important; }
+  .lead-create-dialog > div:first-child p { margin-top: 8px !important; line-height: 1.6; }
+  .lead-create-form > div:first-child { padding: 28px 32px !important; background: #f7f9fb; }
+  .lead-form-sections { gap: 24px !important; align-items: start; }
+  .lead-form-section { gap: 24px !important; padding: 24px; border: 1px solid #e6ebef; border-radius: 14px; background: white; }
+  .lead-form-section > div:first-child { padding-bottom: 18px !important; }
+  .lead-form-section > div:first-child > span:last-child { text-transform: none !important; letter-spacing: 0 !important; font-size: 15px !important; }
+  .lead-form-section label { line-height: 1.5; }
+  .lead-contact-form-card { padding: 18px !important; gap: 16px !important; background: #fafcfd !important; border-color: #dce6eb !important; border-radius: 12px !important; box-shadow: none !important; }
+  .lead-contact-form-card input { height: 40px !important; }
+  .lead-stage-priority { grid-template-columns: minmax(0, 1fr) !important; gap: 22px !important; }
+  .lead-create-form .lead-priority-options { gap: 8px; }
+  .lead-create-form .lead-priority-options button { padding: 10px 8px; min-height: 42px; font-size: 12px; }
+  .lead-client-create-actions { flex-wrap: wrap; justify-content: flex-end; }
+}
+@media (min-width: 768px) and (max-width: 1000px) {
+  .lead-form-sections { grid-template-columns: minmax(0, 1fr) !important; }
+}
+
+.lead-stage-selector { display: flex; align-items: center; gap: 20px; padding: 16px 24px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+.lead-stage-selector label { flex-shrink: 0; font-size: 12px; font-weight: 600; color: #475569; }
+.lead-stage-selector select { width: 280px; max-width: 100%; min-width: 0; min-height: 42px; padding: 8px 36px 8px 12px; border: 1px solid #cbd5e1; border-radius: 10px; background-color: white; color: #004d66; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+.lead-stage-selector select:focus-visible { outline: 3px solid #99e2d3; outline-offset: 2px; }
+@media (max-width: 600px) { .lead-stage-selector { flex-wrap: wrap; gap: 8px; padding: 16px; } .lead-stage-selector select { width: 100%; } }

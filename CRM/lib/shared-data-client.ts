@@ -1,3 +1,4 @@
+import { cleanDirectoryDataset } from "@/lib/directory-cleanup";
 export const SHARED_BROWSER_DATASETS = {
   clients: "fastonmed_clients",
   people: "fastonmed_people",
@@ -24,13 +25,13 @@ export async function persistSharedDataset(
   const response = await fetch(`/api/shared-data/${dataset}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ data, replace, preferExisting }),
+    body: JSON.stringify({ data: cleanDirectoryDataset(dataset, data), replace, preferExisting }),
   });
   const result = await response.json().catch(() => null);
   if (!response.ok || !result?.success || !Array.isArray(result.data)) {
     throw new Error(result?.error || `Unable to save ${dataset}`);
   }
-  return result.data;
+  return cleanDirectoryDataset(dataset, result.data);
 }
 
 export async function fetchSharedDataset(dataset: SharedBrowserDataset): Promise<unknown[]> {
@@ -39,7 +40,7 @@ export async function fetchSharedDataset(dataset: SharedBrowserDataset): Promise
   if (!response.ok || !result?.success || !Array.isArray(result.data)) {
     throw new Error(result?.error || `Unable to load ${dataset}`);
   }
-  return result.data;
+  return cleanDirectoryDataset(dataset, result.data);
 }
 
 export async function deleteSharedDatasetItem(
@@ -77,7 +78,7 @@ export async function syncAllSharedBrowserData(): Promise<void> {
       try {
         const raw = localStorage.getItem(storageKey);
         const parsed = raw ? JSON.parse(raw) : [];
-        if (Array.isArray(parsed)) local = parsed;
+        if (Array.isArray(parsed)) local = cleanDirectoryDataset(dataset, parsed);
       } catch {}
 
       try {

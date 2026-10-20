@@ -1,3 +1,5 @@
+import { filterRetiredRecords } from "@/lib/retired-records";
+import { withRetiredResponse } from "@/lib/retired-response";
 import { NextRequest, NextResponse } from "next/server";
 import { getDbPool } from "@/lib/db";
 import type { Lead } from "@/types";
@@ -27,6 +29,7 @@ function loadBackupFileLeads(): Lead[] | null {
 }
 
 function saveBackupFileLeads(leads: Lead[]): void {
+  leads = filterRetiredRecords("leads", leads);
   try {
     const dir = path.dirname(BACKUP_FILE);
     if (!fs.existsSync(dir)) {
@@ -80,6 +83,7 @@ async function getStoredLeadsFromDb(pool: any): Promise<Lead[] | null> {
 }
 
 async function saveLeadsToDb(pool: any, leads: Lead[]): Promise<boolean> {
+  leads = filterRetiredRecords("leads", leads);
   try {
     const companyId = await getValidCompanyId(pool);
     const jsonStr = JSON.stringify(leads);
@@ -133,7 +137,7 @@ async function getMergedLeads(): Promise<Lead[]> {
   return [];
 }
 
-export async function GET() {
+async function handleGET() {
   try {
     const leads = await getMergedLeads();
     return NextResponse.json({ success: true, leads });
@@ -144,7 +148,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: NextRequest) {
+async function handlePOST(req: NextRequest) {
   try {
     const body = await req.json();
     const existing = await getMergedLeads();
@@ -197,7 +201,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function PUT(req: NextRequest) {
+async function handlePUT(req: NextRequest) {
   try {
     const body = await req.json();
     const id = body?.id || body?.data?.id;
@@ -227,7 +231,7 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-export async function DELETE(req: NextRequest) {
+async function handleDELETE(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
@@ -255,3 +259,8 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: false, error: err?.message || "Failed to delete lead" }, { status: 500 });
   }
 }
+
+export const GET = withRetiredResponse(handleGET, "leads", "leads");
+export const POST = withRetiredResponse(handlePOST, "leads", "leads");
+export const PUT = withRetiredResponse(handlePUT, "leads", "leads");
+export const DELETE = withRetiredResponse(handleDELETE, "leads", "leads");

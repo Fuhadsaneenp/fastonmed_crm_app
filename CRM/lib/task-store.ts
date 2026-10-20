@@ -1,3 +1,4 @@
+import { filterRetiredRecords, getRetiredIds } from "@/lib/retired-records";
 import type { Task } from "@/types";
 
 export const TASKS_STORAGE_KEY = "fastonmed_tasks_v3";
@@ -217,7 +218,7 @@ export async function syncLiveTasksFromApi(): Promise<Task[]> {
   return getStoredTasks();
 }
 
-export function getStoredTasks(): Task[] {
+function readCachedgetStoredTasks(): Task[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(TASKS_STORAGE_KEY);
@@ -411,4 +412,8 @@ export function canUserEditTask(
   );
 
   return isCreator || isAssignee;
+}
+
+export function getStoredTasks(): Task[] {
+  return filterRetiredRecords("tasks", readCachedgetStoredTasks());
 }

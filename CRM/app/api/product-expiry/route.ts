@@ -1,3 +1,4 @@
+import { filterRetiredRecords, getRetiredIds } from "@/lib/retired-records";
 import { NextRequest, NextResponse } from "next/server";
 import { getDbPool } from "@/lib/db";
 import type { ExpiryRecord } from "@/app/(dashboard)/product-expiry/page.tsx";
@@ -39,6 +40,8 @@ async function getSettingJson<T>(pool: any, key: string, fallback: T): Promise<T
 }
 
 async function saveSettingJson(pool: any, key: string, value: any): Promise<void> {
+  if (key === SETTING_KEY_RECORDS) value = filterRetiredRecords("expiry", value);
+  if (key === SETTING_KEY_DELETED) value = Array.from(new Set([...value, ...getRetiredIds("expiry")]));
   const companyId = await getValidCompanyId(pool);
   const jsonStr = JSON.stringify(value);
   const now = new Date();

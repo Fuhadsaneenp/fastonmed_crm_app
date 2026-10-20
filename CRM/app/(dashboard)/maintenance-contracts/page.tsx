@@ -527,7 +527,7 @@ export default function MaintenanceContractsPage() {
       setFormOrgType(firstClient.orgType || "Hospital");
       const contact = firstClient.contacts?.[0];
       setFormContactPerson(contact?.name || firstClient.name);
-      setFormContactPhone(contact?.phone || firstClient.phone || "+971 50 123 4567");
+      setFormContactPhone(contact?.phone || firstClient.phone || "");
       setFormContactEmail(contact?.email || firstClient.email || "");
     } else {
       setFormClientId("c-1");

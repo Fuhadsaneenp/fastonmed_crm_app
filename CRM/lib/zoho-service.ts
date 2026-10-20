@@ -161,8 +161,8 @@ export function normalizeZohoData(payload: ZohoSyncPayload): {
     const city = contact.billing_address?.city || "Dubai";
     const state = contact.billing_address?.state || "Dubai";
     const address = contact.billing_address?.address || "";
-    const phone = contact.mobile || contact.phone || "+971";
-    const email = contact.email || "info@facility.ae";
+    const phone = contact.mobile || contact.phone || "";
+    const email = contact.email || "";
     const vat = contact.tax_reg_no || contact.vat_reg_no || "";
     const revenue = contact.outstanding_receivable_amount || 0;
 

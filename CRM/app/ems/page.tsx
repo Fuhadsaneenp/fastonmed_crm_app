@@ -361,15 +361,6 @@ export default function EMSDashboardPage() {
   const [employeeSearchQuery, setEmployeeSearchQuery] = useState<string>("");
   const [selectedCheckboxes, setSelectedCheckboxes] = useState<Record<string, boolean>>({});
 
-  // Org Chart State
-  const [orgChartCompany, setOrgChartCompany] = useState<string>("FastonMed");
-  const [expandedOrgNodes, setExpandedOrgNodes] = useState<Record<string, boolean>>({
-    root: true,
-    fuhad: true,
-    hashim: true,
-    riyas: true,
-  });
-
   // Payroll State
   const [payrollCompany, setPayrollCompany] = useState<string>("FastonMed");
   const [payrollMode, setPayrollMode] = useState<"run" | "history">("run");
@@ -975,7 +966,6 @@ export default function EMSDashboardPage() {
       subItems: [
         { id: "manage-team", label: "Manage Team" },
         { id: "offboarding", label: "Offboarding" },
-        { id: "org-chart", label: "Organisation Chart" },
       ],
     },
     {
@@ -1801,7 +1791,7 @@ export default function EMSDashboardPage() {
                           <div className="profile-card-contact-list">
                             <div className="contact-item">
                               <Mail size={16} />
-                              <span>{selectedEmployeeForDetail.email || "nihala808678@gmail.com"}</span>
+                              <span>{selectedEmployeeForDetail.email || "Not added"}</span>
                             </div>
                             <div className="contact-item">
                               <Phone size={16} />
@@ -1885,7 +1875,7 @@ export default function EMSDashboardPage() {
                                 <div className="grid-item">
                                   <span className="meta-item-label">Personal Email</span>
                                   <strong className="meta-item-value">
-                                    {selectedEmployeeForDetail.email || "nihala808678@gmail.com"}
+                                    {selectedEmployeeForDetail.email || "Not added"}
                                   </strong>
                                 </div>
                                 <div className="grid-item">
@@ -2874,206 +2864,6 @@ export default function EMSDashboardPage() {
                 </div>
               )}
 
-              {/* SUBTAB 3: ORGANISATION CHART (Screenshot 3) */}
-              {activeSubTab === "org-chart" && (
-                <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      marginBottom: 24,
-                      paddingBottom: 20,
-                      borderBottom: "1px solid #edf0f3",
-                    }}
-                  >
-                    <h1 style={{ fontSize: 24, fontWeight: 700, color: "#111827", margin: 0 }}>
-                      Organisation Chart
-                    </h1>
-                    <select
-                      value={orgChartCompany}
-                      onChange={(e) => setOrgChartCompany(e.target.value)}
-                      style={{
-                        padding: "8px 16px",
-                        borderRadius: 8,
-                        border: "1px solid #e2e8f0",
-                        backgroundColor: "#ffffff",
-                        fontSize: 13.5,
-                        fontWeight: 600,
-                        color: "#0f172a",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {stemsCompanies.map((c) => (
-                        <option key={c.id} value={c.name}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Interactive Tree View */}
-                  <div
-                    className="org-chart-canvas"
-                    style={{
-                      backgroundColor: "#ffffff",
-                      borderRadius: 12,
-                      border: "1px solid #e2e8f0",
-                      minHeight: 520,
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
-                    }}
-                  >
-                    <div className="org-chart-root">
-                      {/* Top Company Node */}
-                      <div className="org-office-card">
-                        {orgChartCompany}
-                        <button
-                          type="button"
-                          className="org-chart-toggle"
-                          onClick={() =>
-                            setExpandedOrgNodes((prev) => ({ ...prev, root: !prev.root }))
-                          }
-                          aria-label="Toggle root"
-                        >
-                          {expandedOrgNodes.root ? <Minus size={13} /> : <Plus size={13} />}
-                        </button>
-                      </div>
-
-                      {/* Tree Branches */}
-                      {expandedOrgNodes.root && (
-                        <div className="org-chart-children-wrap">
-                          <div className="org-chart-vertical-line" />
-                          <div className="org-chart-children">
-                            {/* Leader Node: Fuhad (Super Admin) */}
-                            <div className="org-chart-child">
-                              <div className="org-chart-child-line" />
-                              <div className="org-chart-branch">
-                                <div className="org-node-card">
-                                  <div
-                                    className="org-node-avatar"
-                                    style={{
-                                      backgroundImage: "url('/api/ems/photo/cmrtifqeg0004ty4z656cxe72')",
-                                    }}
-                                  >
-                                    FP
-                                  </div>
-                                  <strong className="org-node-name">Fuhad</strong>
-                                  <span className="org-node-role">Super Admin</span>
-                                  <span className="org-node-office">{orgChartCompany}</span>
-                                  <button
-                                    type="button"
-                                    className="org-chart-toggle"
-                                    onClick={() =>
-                                      setExpandedOrgNodes((prev) => ({ ...prev, fuhad: !prev.fuhad }))
-                                    }
-                                  >
-                                    {expandedOrgNodes.fuhad ? <Minus size={13} /> : <Plus size={13} />}
-                                  </button>
-                                </div>
-
-                                {expandedOrgNodes.fuhad && (
-                                  <div className="org-chart-children-wrap">
-                                    <div className="org-chart-vertical-line" />
-                                    <div className="org-chart-children">
-                                      {/* Sub-branch 1: Hashim (Operations Manager) */}
-                                      <div className="org-chart-child">
-                                        <div
-                                          className="org-chart-horizontal-line"
-                                          style={{ left: "50%", right: "-8px" }}
-                                        />
-                                        <div className="org-chart-child-line" />
-                                        <div className="org-chart-branch">
-                                          <div className="org-node-card">
-                                            <div className="org-node-avatar">HV</div>
-                                            <strong className="org-node-name">Hashim</strong>
-                                            <span className="org-node-role">Operations Manager</span>
-                                            <span className="org-node-office">{orgChartCompany}</span>
-                                            <button
-                                              type="button"
-                                              className="org-chart-toggle"
-                                              onClick={() =>
-                                                setExpandedOrgNodes((prev) => ({ ...prev, hashim: !prev.hashim }))
-                                              }
-                                            >
-                                              {expandedOrgNodes.hashim ? <Minus size={13} /> : <Plus size={13} />}
-                                            </button>
-                                          </div>
-
-                                          {expandedOrgNodes.hashim && (
-                                            <div className="org-chart-children-wrap">
-                                              <div className="org-chart-vertical-line" />
-                                              <div className="org-chart-children">
-                                                {/* Child: Fidha (Client Relations) */}
-                                                <div className="org-chart-child">
-                                                  <div className="org-chart-child-line" />
-                                                  <div className="org-node-card">
-                                                    <div className="org-node-avatar">FD</div>
-                                                    <strong className="org-node-name">Fidha</strong>
-                                                    <span className="org-node-role">Client Relations</span>
-                                                    <span className="org-node-office">{orgChartCompany}</span>
-                                                  </div>
-                                                </div>
-                                              </div>
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-
-                                      {/* Sub-branch 2: Riyas (Sales Executive) */}
-                                      <div className="org-chart-child">
-                                        <div
-                                          className="org-chart-horizontal-line"
-                                          style={{ left: "-8px", right: "50%" }}
-                                        />
-                                        <div className="org-chart-child-line" />
-                                        <div className="org-chart-branch">
-                                          <div className="org-node-card">
-                                            <div className="org-node-avatar">RY</div>
-                                            <strong className="org-node-name">Riyas</strong>
-                                            <span className="org-node-role">Sales Executive</span>
-                                            <span className="org-node-office">{orgChartCompany}</span>
-                                            <button
-                                              type="button"
-                                              className="org-chart-toggle"
-                                              onClick={() =>
-                                                setExpandedOrgNodes((prev) => ({ ...prev, riyas: !prev.riyas }))
-                                              }
-                                            >
-                                              {expandedOrgNodes.riyas ? <Minus size={13} /> : <Plus size={13} />}
-                                            </button>
-                                          </div>
-
-                                          {expandedOrgNodes.riyas && (
-                                            <div className="org-chart-children-wrap">
-                                              <div className="org-chart-vertical-line" />
-                                              <div className="org-chart-children">
-                                                {/* Child: User 1 (Sales Executive) */}
-                                                <div className="org-chart-child">
-                                                  <div className="org-chart-child-line" />
-                                                  <div className="org-node-card">
-                                                    <div className="org-node-avatar">U1</div>
-                                                    <strong className="org-node-name">User 1</strong>
-                                                    <span className="org-node-role">Sales Executive</span>
-                                                    <span className="org-node-office">{orgChartCompany}</span>
-                                                  </div>
-                                                </div>
-                                              </div>
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 

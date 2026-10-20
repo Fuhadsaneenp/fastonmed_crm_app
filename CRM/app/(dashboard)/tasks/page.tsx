@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { mockEmployees } from "@/lib/mock-data";
+import { apiRequest } from "@/lib/api-client";
 import { getStoredTasks, saveStoredTasks, clearDummyTasks, syncLiveTasksFromApi, addStoredTask, updateStoredTask, deleteStoredTask, canUserEditTask } from "@/lib/task-store";
 import { syncStoredServiceTicketsToTasks } from "@/lib/service-store";
 import { getStoredClients, addClientFromLead, saveStoredClients } from "@/lib/client-store";
@@ -9,6 +10,7 @@ import { getStatusColor } from "@/lib/utils";
 import type { Task, TaskType, Client, OrgType, ClientStatus } from "@/types";
 import toast from "react-hot-toast";
 import * as Dialog from "@radix-ui/react-dialog";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   CheckCircle2,
   Clock,
@@ -137,11 +139,46 @@ function TasksContent() {
     id: "emp-fuhad",
   });
 
+  const [employeeList, setEmployeeList] = useState<{
+    id: string;
+    name: string;
+    role: string;
+    email?: string;
+  }[]>(mockEmployees);
+
+  const [employeeLoadError, setEmployeeLoadError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const loadTeam = async () => {
+      try {
+        const employees = await apiRequest<{ id: string; name: string; role: string; email?: string; status?: string }[]>("/api/employees");
+        if (!active) return;
+        const members = new Map<string, { id: string; name: string; role: string; email?: string }>();
+        for (const employee of employees) {
+          const name = employee.name?.trim();
+          if (!name || !employee.id || employee.status?.toUpperCase() === "TERMINATED") continue;
+          members.set(name.toLowerCase(), { ...employee, name, role: employee.role || "Team Member" });
+        }
+        setEmployeeList(Array.from(members.values()));
+        setEmployeeLoadError(false);
+      } catch {
+        if (active) setEmployeeLoadError(true);
+      }
+    };
+    void loadTeam();
+    window.addEventListener("focus", loadTeam);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", loadTeam);
+    };
+  }, []);
+
   const isMyScope = memberParam.toLowerCase() === "my";
   const isAllScope = memberParam.toLowerCase() === "all" || memberParam.toLowerCase() === "team";
   const selectedEmployee =
     !isMyScope && !isAllScope
-      ? mockEmployees.find(
+      ? employeeList.find(
           (e) => e.name.toLowerCase() === decodeURIComponent(memberParam).toLowerCase()
         ) || {
           name: decodeURIComponent(memberParam),
@@ -169,7 +206,8 @@ function TasksContent() {
   const [showAddClientModal, setShowAddClientModal] = useState(false);
   const clientDropdownRef = useRef<HTMLDivElement>(null);
   const [newNotes, setNewNotes] = useState("");
-  const [newAssignedTo, setNewAssignedTo] = useState("");
+  const [newAssignees, setNewAssignees] = useState<string[]>([]);
+  const [creatingTask, setCreatingTask] = useState(false);
 
   // Edit Task State for Task Detail Dialog
   const [isEditingDetail, setIsEditingDetail] = useState(false);
@@ -469,7 +507,7 @@ function TasksContent() {
       return;
     }
 
-    const assignedEmp = mockEmployees.find((emp) => emp.name.toLowerCase() === editAssignedTo.toLowerCase());
+    const assignedEmp = employeeList.find((emp) => emp.name.toLowerCase() === editAssignedTo.toLowerCase());
 
     const updatedTask: Task = {
       ...detailTask,
@@ -932,7 +970,7 @@ function TasksContent() {
   const openAddTask = (dateStr?: string | React.MouseEvent) => {
     const targetDate = typeof dateStr === "string" ? dateStr : (dateFilterMode === "all" ? getTodayIso() : selectedDate);
     setNewDueDate(targetDate);
-    setNewAssignedTo(selectedEmployee ? selectedEmployee.name : currentUser.name);
+    setNewAssignees([selectedEmployee ? selectedEmployee.name : currentUser.name]);
     setShowAddTypeInput(false);
     setCustomTypeInput("");
     setSelectedClientId(undefined);
@@ -943,15 +981,18 @@ function TasksContent() {
   };
 
   // Add Task Handler
-  const handleCreateTask = (e: React.FormEvent) => {
+  const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (creatingTask) return;
     if (!newTitle.trim()) {
       toast.error("Please enter a task title");
       return;
     }
 
-    const assignedName = newAssignedTo || (selectedEmployee ? selectedEmployee.name : currentUser.name);
-    const assignedEmp = mockEmployees.find((emp) => emp.name.toLowerCase() === assignedName.toLowerCase());
+    if (newAssignees.length === 0) {
+      toast.error("Please select at least one person");
+      return;
+    }
 
     let finalClientId = selectedClientId;
     let finalClientName = newClientName.trim();
@@ -971,8 +1012,12 @@ function TasksContent() {
       }
     }
 
-    const newTask: Task = {
-      id: `task-${Date.now()}`,
+    const assignmentId = `task-${Date.now()}`;
+    const assignments: Task[] = [];
+    for (const [index, assignedName] of newAssignees.entries()) {
+      const assignedEmp = employeeList.find((emp) => emp.name.toLowerCase() === assignedName.toLowerCase());
+      const newTask: Task = {
+      id: `${assignmentId}-${index}`,
       title: newTitle.trim(),
       type: newType,
       assignedTo: assignedName,
@@ -989,9 +1034,28 @@ function TasksContent() {
       createdById: (currentUser as any)?.id || `emp-${(currentUser.name || "hashim").toLowerCase().split(" ")[0]}`,
     };
 
-    const updated = addStoredTask(newTask);
-    setTasks(updated);
-    toast.success(`Task "${newTask.title}" assigned to ${assignedName}!`);
+      assignments.push(newTask);
+    }
+    setCreatingTask(true);
+    try {
+      const response = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tasks: assignments }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error("Could not assign the task. Please try again.");
+      const ids = new Set(assignments.map((task) => task.id));
+      const updated = [...assignments, ...getStoredTasks().filter((task) => !ids.has(task.id))];
+      saveStoredTasks(updated);
+      setTasks(updated);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not assign the task");
+      return;
+    } finally {
+      setCreatingTask(false);
+    }
+    toast.success(`Task assigned to ${newAssignees.join(", ")}!`);
 
     // Reset Form & Close
     setNewTitle("");
@@ -1019,7 +1083,7 @@ function TasksContent() {
       >
         <Dialog.Portal>
           <Dialog.Overlay data-mobile-overlay="true" style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.48)", backdropFilter: "blur(5px)", zIndex: 220 }} />
-          <Dialog.Content className="task-detail-dialog"
+          <Dialog.Content className={`task-detail-dialog${isEditingDetail ? " task-edit-dialog" : ""}`}
             style={{
               position: "fixed",
               top: "50%",
@@ -1037,7 +1101,7 @@ function TasksContent() {
           >
             {isEditingDetail ? (
               /* ─── EDIT TASK MODE ─── */
-              <div>
+              <div className="task-edit-shell">
                 <div
                   style={{
                     padding: "20px 26px",
@@ -1093,7 +1157,7 @@ function TasksContent() {
                   </button>
                 </div>
 
-                <form onSubmit={handleSaveEditedTask}>
+                <form className="task-edit-form" onSubmit={handleSaveEditedTask}>
                   <div style={{ padding: "22px 26px", display: "flex", flexDirection: "column", gap: 16 }}>
                     {/* Task Title */}
                     <div>
@@ -1177,7 +1241,7 @@ function TasksContent() {
                           onChange={(e) => setEditAssignedTo(e.target.value)}
                           style={{ fontSize: 13, height: 38 }}
                         >
-                          {mockEmployees.map((emp) => (
+                          {employeeList.map((emp) => (
                             <option key={emp.id} value={emp.name}>
                               {emp.name} ({emp.role})
                             </option>
@@ -1409,7 +1473,7 @@ function TasksContent() {
                     </div>
 
                     {/* Footer Actions */}
-                    <div
+                    <div className="task-edit-actions"
                       style={{
                         display: "flex",
                         justifyContent: "space-between",
@@ -2557,7 +2621,7 @@ function TasksContent() {
                 </tr>
               </thead>
               <tbody>
-                {mockEmployees.map((emp, index) => {
+                {employeeList.map((emp, index) => {
                   const activeCount = tasks.filter((t) => {
                     const target = (emp.name || "").trim().toLowerCase();
                     const tFirst = target.split(" ")[0];
@@ -2585,7 +2649,7 @@ function TasksContent() {
                       key={emp.id}
                       style={{
                         borderBottom:
-                          index < mockEmployees.length - 1 ? "1px solid #f1f5f9" : "none",
+                          index < employeeList.length - 1 ? "1px solid #f1f5f9" : "none",
                         transition: "background-color 0.15s ease",
                       }}
                       onMouseEnter={(e) =>
@@ -3208,7 +3272,7 @@ function TasksContent() {
                               whiteSpace: "nowrap",
                             }}
                           >
-                            {TYPE_EMOJIS[task.type] || "📋"} {task.type}
+                            {task.type}
                           </span>
 
                           {isTaskRolledForward(task) && (
@@ -3228,7 +3292,6 @@ function TasksContent() {
                               }}
                               title={`Carried forward from ${task.dueDate}`}
                             >
-                              <RotateCcw size={9} />
                               <span>Rollover</span>
                             </span>
                           )}
@@ -3526,7 +3589,7 @@ function TasksContent() {
                   Create Task
                 </h2>
                 <p style={{ margin: "3px 0 0 0", fontSize: 12.5, color: "#64748b" }}>
-                  Assign a new task to {newAssignedTo || currentUser.name}&apos;s workload
+                  Assign this task to one or more team members
                 </p>
               </div>
               <button
@@ -3694,21 +3757,39 @@ function TasksContent() {
                   <label className="form-label" style={{ fontSize: 12, marginBottom: 4 }}>
                     Assign To
                   </label>
-                  <select
-                    className="form-input"
-                    value={newAssignedTo}
-                    onChange={(e) => setNewAssignedTo(e.target.value)}
-                    style={{ fontSize: 13 }}
-                  >
-                    <option value={currentUser.name}>{currentUser.name} (Myself)</option>
-                    {mockEmployees
-                      .filter((e) => e.name.toLowerCase() !== currentUser.name.toLowerCase())
-                      .map((emp) => (
-                        <option key={emp.id} value={emp.name}>
-                          {emp.name} ({emp.role})
-                        </option>
-                      ))}
-                  </select>
+                  <DropdownMenu.Root>
+                    <DropdownMenu.Trigger asChild>
+                      <button type="button" aria-label="Assign team members" style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", minHeight: 38, padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: 8, background: "#fff", color: "#334155", fontSize: 13, textAlign: "left", cursor: "pointer" }}>
+                        <Users size={16} aria-hidden="true" style={{ color: "#64748b", flexShrink: 0 }} />
+                        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {newAssignees.length ? newAssignees.join(", ") : "Select team members"}
+                        </span>
+                        {newAssignees.length > 1 && <span style={{ borderRadius: 4, background: "#e9f7f4", color: "#005468", padding: "1px 6px", fontSize: 11 }}>{newAssignees.length}</span>}
+                        <ChevronRight size={14} aria-hidden="true" style={{ transform: "rotate(90deg)", flexShrink: 0 }} />
+                      </button>
+                    </DropdownMenu.Trigger>
+                    <DropdownMenu.Portal>
+                      <DropdownMenu.Content align="start" sideOffset={5} collisionPadding={12} aria-label="Team members" style={{ width: "var(--radix-dropdown-menu-trigger-width)", maxHeight: "min(280px, var(--radix-dropdown-menu-content-available-height))", overflowY: "auto", padding: 5, background: "white", border: "1px solid #dbe3ec", borderRadius: 10, boxShadow: "0 12px 30px rgba(15, 23, 42, 0.14)", zIndex: 10000 }}>
+                        <DropdownMenu.Label style={{ padding: "7px 9px", fontSize: 11, color: "#64748b" }}>Select one or more team members</DropdownMenu.Label>
+                        {[
+                          { id: currentUser.id || "myself", name: currentUser.name, role: currentUser.role },
+                          ...employeeList.filter((employee) => employee.name.toLowerCase() !== currentUser.name.toLowerCase()),
+                        ].map((employee) => (
+                          <DropdownMenu.CheckboxItem key={employee.id} checked={newAssignees.includes(employee.name)} onSelect={(event) => event.preventDefault()} onCheckedChange={(checked) => setNewAssignees((selected) => checked ? Array.from(new Set([...selected, employee.name])) : selected.filter((name) => name !== employee.name))} className="team-assignee-option" style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px", borderRadius: 6, fontSize: 13, color: "#334155", cursor: "pointer", outline: "none" }}>
+                            <span aria-hidden="true" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, border: "1px solid", borderColor: newAssignees.includes(employee.name) ? "#005468" : "#cbd5e1", borderRadius: 4, background: newAssignees.includes(employee.name) ? "#005468" : "#fff", color: "#fff", flexShrink: 0 }}><DropdownMenu.ItemIndicator><Check size={12} /></DropdownMenu.ItemIndicator></span>
+                            <span style={{ flex: 1 }}>{employee.name}{employee.name === currentUser.name ? " (Myself)" : ""}<span style={{ display: "block", fontSize: 11, color: "#64748b", marginTop: 2 }}>{employee.role}</span></span>
+                          </DropdownMenu.CheckboxItem>
+                        ))}
+                      </DropdownMenu.Content>
+                    </DropdownMenu.Portal>
+                  </DropdownMenu.Root>
+                  <style jsx global>{`.team-assignee-option[data-highlighted] { background: #eef8f6; }`}</style>
+                  <p style={{ fontSize: 12, color: "#64748b", marginTop: 6 }}>Select one or more people. Each person receives their own task.</p>
+                  {employeeLoadError && (
+                    <p role="status" style={{ fontSize: 12, color: "#b45309", marginTop: 6 }}>
+                      Could not load your team. Return to this tab to retry.
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -3990,10 +4071,11 @@ function TasksContent() {
                 </button>
                 <button
                   type="submit"
+                  disabled={creatingTask}
                   className="btn btn-primary"
                   style={{ backgroundColor: "#004d66" }}
                 >
-                  Create & Assign Task
+                  {creatingTask ? "Assigning…" : "Create & Assign Task"}
                 </button>
               </div>
             </form>

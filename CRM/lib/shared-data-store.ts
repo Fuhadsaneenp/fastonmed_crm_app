@@ -1,3 +1,4 @@
+import { cleanDirectoryDataset } from "@/lib/directory-cleanup";
 import { getDbPool } from "@/lib/db";
 import type { RowDataPacket } from "mysql2";
 import type { PoolConnection } from "mysql2/promise";
@@ -42,7 +43,7 @@ export async function readSharedData(dataset: SharedDataset): Promise<unknown[]>
   if (!rows[0]?.value) return [];
 
   const parsed = typeof rows[0].value === "string" ? JSON.parse(rows[0].value) : rows[0].value;
-  return Array.isArray(parsed) ? parsed : [];
+  return cleanDirectoryDataset(dataset, Array.isArray(parsed) ? parsed : []);
 }
 
 function itemKey(item: unknown): string {
@@ -81,7 +82,7 @@ export async function writeSharedData(dataset: SharedDataset, data: unknown[]): 
     `INSERT INTO CompanySetting (id, companyId, \`key\`, \`value\`, createdAt, updatedAt)
      VALUES (?, ?, ?, ?, ?, ?)
      ON DUPLICATE KEY UPDATE \`value\` = VALUES(\`value\`), updatedAt = VALUES(updatedAt)`,
-    [id, companyId, key, JSON.stringify(data), now, now]
+    [id, companyId, key, JSON.stringify(cleanDirectoryDataset(dataset, data)), now, now]
   );
 }
 
@@ -109,13 +110,13 @@ export async function updateSharedData(
       if (Array.isArray(parsed)) current = parsed;
     }
 
-    const data = updater(current);
+    const data = cleanDirectoryDataset(dataset, updater(current));
     const now = new Date();
     await connection.query(
       `INSERT INTO CompanySetting (id, companyId, \`key\`, \`value\`, createdAt, updatedAt)
        VALUES (?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE \`value\` = VALUES(\`value\`), updatedAt = VALUES(updatedAt)`,
-      [`setting_${key}`, String(companyRows[0].id), key, JSON.stringify(data), now, now]
+      [`setting_${key}`, String(companyRows[0].id), key, JSON.stringify(cleanDirectoryDataset(dataset, data)), now, now]
     );
     await connection.commit();
     return data;

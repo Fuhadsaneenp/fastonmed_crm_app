@@ -2397,7 +2397,7 @@ function ProductDetail({
       totalVolume: 0,
       contactPerson: "Account Manager",
       contactRole: "Procurement Lead",
-      phone: newCompanyPhone.trim() || "+971 4 000 0000",
+      phone: newCompanyPhone.trim() || "",
       email: newCompanyEmail.trim() || `sales@${trimmedName.toLowerCase().replace(/[^a-z0-9]/g, "")}.com`,
       website: `https://${trimmedName.toLowerCase().replace(/[^a-z0-9]/g, "")}.com`,
       flag: "🏢",

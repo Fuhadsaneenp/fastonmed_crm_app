@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import toast from "react-hot-toast";
@@ -74,6 +74,9 @@ export default function SalesPage() {
   const invoicePageSize = 10;
   const [isSyncing, setIsSyncing] = useState(false);
 
+  const syncInFlight = useRef(false);
+  const [syncState, setSyncState] = useState("Saved invoices");
+
   // Add & Sync Modals
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
@@ -99,32 +102,31 @@ export default function SalesPage() {
 
     // 2. Automatically fetch fresh live invoices from server & MySQL database in the background
     fetchZohoLiveInvoicesFromServer().then((fresh) => {
-      if (fresh && fresh.length > 0) {
-        setInvoices(fresh);
-      }
+      if (!syncInFlight.current) setInvoices(fresh);
     });
   };
 
   useEffect(() => {
     loadData();
 
-    // Automatically poll server every 15s so newly created invoices appear automatically
-    const interval = setInterval(() => {
-      fetchZohoLiveInvoicesFromServer().then((fresh) => {
-        if (fresh && fresh.length > 0) {
-          setInvoices(fresh);
-        }
-      });
-    }, 15000);
-
-    // Refresh immediately when user focuses back on this tab
-    const handleFocus = () => {
-      fetchZohoLiveInvoicesFromServer(true).then((fresh) => {
-        if (fresh && fresh.length > 0) {
-          setInvoices(fresh);
-        }
-      });
+    const refreshLive = async () => {
+      if (syncInFlight.current) return;
+      syncInFlight.current = true;
+      setIsSyncing(true);
+      setSyncState("Syncing…");
+      try {
+        setInvoices(await fetchZohoLiveInvoicesFromServer(true));
+        setSyncState("Synced");
+      } catch (error) {
+        setSyncState(error instanceof Error ? error.message : "Sync failed");
+      } finally {
+        syncInFlight.current = false;
+        setIsSyncing(false);
+      }
     };
+    void refreshLive();
+    const interval = setInterval(() => { void refreshLive(); }, 60000);
+    const handleFocus = () => { void refreshLive(); };
 
     window.addEventListener("focus", handleFocus);
     window.addEventListener("fastonmed_invoices_updated", loadData);
@@ -137,25 +139,22 @@ export default function SalesPage() {
 
   // Sync Live Data from Zoho Books
   const handleSyncZoho = async () => {
+    if (syncInFlight.current) return;
+    syncInFlight.current = true;
     setIsSyncing(true);
     try {
-      // 1. Background trigger for Zoho sync (webhook / API if present)
-      void fetch("/api/zoho/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ webhookUrl: zohoConfig.webhookUrl || undefined }),
-      }).catch(() => {});
-
-      // 2. Fetch latest live invoices from MySQL database & server
+      setSyncState("Syncing…");
       const fresh = await fetchZohoLiveInvoicesFromServer(true);
-      if (fresh && fresh.length > 0) {
-        setInvoices(fresh);
-      }
+      setInvoices(fresh);
+      setSyncState("Synced");
 
       toast.success(`Synchronized live invoices from Zoho Books! Total: ${fresh.length}`);
-    } catch {
-      toast.error("Failed to connect to Zoho Books API");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Zoho sync failed";
+      setSyncState(message);
+      toast.error(message);
     } finally {
+      syncInFlight.current = false;
       setIsSyncing(false);
     }
   };
@@ -391,8 +390,8 @@ export default function SalesPage() {
             <span
               style={{
                 fontSize: 11,
-                background: "#dcfce7",
-                color: "#15803d",
+                background: syncState === "Synced" ? "#dcfce7" : "#fef3c7",
+                color: syncState === "Synced" ? "#15803d" : "#92400e",
                 padding: "2px 8px",
                 borderRadius: 4,
                 fontWeight: 700,
@@ -401,8 +400,8 @@ export default function SalesPage() {
                 gap: 4,
               }}
             >
-              <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#16a34a" }} />
-              Synced
+              <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: syncState === "Synced" ? "#16a34a" : "#d97706" }} />
+              {syncState}
             </span>
           </div>
 

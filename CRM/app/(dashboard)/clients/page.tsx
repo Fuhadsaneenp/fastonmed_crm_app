@@ -403,6 +403,8 @@ function ClientsContent() {
 
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [directorySection, setDirectorySection] = useState<"organisations" | "people">("organisations");
+  const [peoplePage, setPeoplePage] = useState(1);
+
   const [clients, setClients] = useState<Client[]>([]);
   const [people, setPeople] = useState<ContactPerson[]>([]);
   const [showAddPerson, setShowAddPerson] = useState(false);
@@ -514,6 +516,7 @@ function ClientsContent() {
   const [orgTypes, setOrgTypes] = useState<string[]>(DEFAULT_ORG_TYPES);
   const [places, setPlaces] = useState<string[]>(INITIAL_PLACES);
   const [search, setSearch] = useState("");
+  useEffect(() => { setPeoplePage(1); }, [search]);
   const [filterType, setFilterType] = useState(() => searchParams.get("type") || "All");
   const [filterStatus, setFilterStatus] = useState(() => searchParams.get("status") || "All");
   const [filterOperationalStatus, setFilterOperationalStatus] = useState(() => searchParams.get("operationalStatus") || "All");
@@ -980,20 +983,26 @@ function ClientsContent() {
       </div>
       {directorySection === "people" ? (
         <section className="directory-people">
-          <div className="directory-people-search"><Search size={17} /><input aria-label="Search people" placeholder="Search people, role or organisation…" value={search} onChange={e => setSearch(e.target.value)} /></div>
+          <div className="directory-toolbar directory-people-controls">
+          <div className="directory-people-search directory-shared-search"><Search size={17} /><input aria-label="Search people" placeholder="Search people, role or organisation…" value={search} onChange={e => setSearch(e.target.value)} />{search && <button type="button" aria-label="Clear search" onClick={() => setSearch("")}><X size={14} /></button>}</div>
           <div className="directory-people-toolbar"><p className="directory-people-count">{people.filter(person => [person.name, person.clientName, person.designation].some(value => value?.toLowerCase().includes(search.toLowerCase()))).length} contacts</p><button type="button" className="btn btn-primary" onClick={() => setShowAddPerson(true)}><Plus size={16}/>Add Person</button></div>
-          {people.filter(person => [person.name, person.clientName, person.designation].some(value => value?.toLowerCase().includes(search.toLowerCase()))).map(person => (
-            <article key={person.id} className="directory-person">
+          </div>
+          {people.filter(person => [person.name, person.clientName, person.designation].some(value => value?.toLowerCase().includes(search.toLowerCase()))).slice((Math.min(peoplePage, Math.max(1, Math.ceil(people.filter(person => [person.name, person.clientName, person.designation].some(value => value?.toLowerCase().includes(search.toLowerCase()))).length / 20))) - 1) * 20, Math.min(peoplePage, Math.max(1, Math.ceil(people.filter(person => [person.name, person.clientName, person.designation].some(value => value?.toLowerCase().includes(search.toLowerCase()))).length / 20))) * 20).map(person => (
+            <article key={person.id} className="directory-person" role="button" tabIndex={0}
+              aria-label={`View ${person.name}'s profile`}
+              onClick={() => router.push(`/people?person=${encodeURIComponent(person.id)}`)}
+              onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); router.push(`/people?person=${encodeURIComponent(person.id)}`); } }}>
               <div className="directory-person-avatar">{person.name?.slice(0, 1)}</div>
-              <div><strong>{person.name}</strong><p>{[person.designation, person.clientName].filter(Boolean).join(" · ")}</p><div className="directory-person-links">{person.phone && <a href={`tel:${person.phone}`} aria-label={`Call ${person.name}`}><Phone size={16} />Call</a>}{person.email && <a href={`mailto:${person.email}`} aria-label={`Email ${person.name}`}><Mail size={16} />Email</a>}<button type="button" onClick={() => { const organisation = clients.find(c => c.id === person.clientId || c.contacts.some(contact => contact.id === person.id)); if (organisation) { setSelected(organisation); setActiveTab("contacts"); document.querySelector(".crm-main")?.scrollTo({top:0}); } }}>View organisation <ArrowUpRight size={14} /></button></div></div>
+              <div><strong>{person.name}</strong><p>{[person.designation, person.clientName].filter(Boolean).join(" · ")}</p><div className="directory-person-links" onClick={event => event.stopPropagation()}>{person.phone && <a href={`tel:${person.phone}`} aria-label={`Call ${person.name}`}><Phone size={16} />Call</a>}{person.email && <a href={`mailto:${person.email}`} aria-label={`Email ${person.name}`}><Mail size={16} />Email</a>}<button type="button" onClick={() => { const organisation = clients.find(c => c.id === person.clientId || c.contacts.some(contact => contact.id === person.id)); if (organisation) { setSelected(organisation); setActiveTab("contacts"); document.querySelector(".crm-main")?.scrollTo({top:0}); } }}>View organisation <ArrowUpRight size={14} /></button></div></div>
             </article>
           ))}
+          <DirectoryPagination total={people.filter(person => [person.name, person.clientName, person.designation].some(value => value?.toLowerCase().includes(search.toLowerCase()))).length} page={Math.min(peoplePage, Math.max(1, Math.ceil(people.filter(person => [person.name, person.clientName, person.designation].some(value => value?.toLowerCase().includes(search.toLowerCase()))).length / 20)))} onChange={page => {setPeoplePage(page);document.querySelector(".crm-main")?.scrollTo({top:0,behavior:"smooth"});}} />
           {people.length === 0 && <p>No contacts saved yet.</p>}
         </section>
       ) : <>
       {/* Modern Filter Toolbar */}
       <div
-        className={`card clients-toolbar ${mobileFiltersOpen ? "mobile-filters-open" : ""}`}
+        className={`card clients-toolbar directory-toolbar ${mobileFiltersOpen ? "mobile-filters-open" : ""}`}
         style={{
           padding: "8px 12px",
           display: "flex",
@@ -1010,7 +1019,7 @@ function ClientsContent() {
         {/* Left: Search & Filter Chips */}
         <div className="clients-filters" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", flex: "1 1 auto", minWidth: 0 }}>
           {/* Search Box */}
-          <div className="clients-search"
+          <div className="clients-search directory-shared-search"
             style={{
               display: "flex",
               alignItems: "center",
@@ -1813,7 +1822,7 @@ function DeleteClientModal({
   };
 
   return (
-    <div data-mobile-overlay="true"
+    <div className="organisation-delete-overlay" data-mobile-overlay="true"
       style={{
         position: "fixed",
         inset: 0,
@@ -1828,7 +1837,7 @@ function DeleteClientModal({
       onClick={onClose}
     >
       <div
-        className="card"
+        className="card organisation-delete-dialog" role="dialog" aria-modal="true" aria-labelledby="organisation-delete-title"
         style={{
           maxWidth: 440,
           width: "100%",
@@ -1858,11 +1867,11 @@ function DeleteClientModal({
             <Trash2 size={22} />
           </div>
           <div style={{ flex: 1 }}>
-            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
+            <h3 id="organisation-delete-title" style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
               Delete Organisation
             </h3>
             <p style={{ margin: "6px 0 0", fontSize: 13, color: "#64748b", lineHeight: 1.45 }}>
-              Are you sure you want to delete <strong style={{ color: "#0f172a" }}>&quot;{client.name}&quot;</strong>? This action will remove the organisation from your directory.
+              This will remove the organisation below from your directory.
             </p>
 
             <div
@@ -1925,7 +1934,7 @@ function DeleteClientModal({
                 }}
               >
                 <Trash2 size={14} />
-                <span>Delete Organisation</span>
+                <span>Delete</span>
               </button>
             </div>
           </div>
@@ -3039,184 +3048,21 @@ function ClientModal({
                       </button>
                     </div>
                   ) : (
-                    <div ref={placeDropdownRef} style={{ position: "relative" }}>
-                      <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                        <input
-                          type="text"
-                          className="form-input"
-                          placeholder="e.g. Oud Metha"
-                          value={form.city}
-                          onFocus={() => setIsPlaceDropdownOpen(true)}
-                          onChange={(e) => {
-                            handlePlaceChange(e.target.value);
-                            setIsPlaceDropdownOpen(true);
-                          }}
-                          style={{
-                            fontSize: 12.5,
-                            height: 38,
-                            paddingRight: 32,
-                            width: "100%",
-                            borderRadius: 8,
-                            borderColor: isPlaceDropdownOpen ? "#004d66" : undefined,
-                          }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setIsPlaceDropdownOpen((prev) => !prev)}
-                          style={{
-                            position: "absolute",
-                            right: 8,
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
-                            color: "#64748b",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            padding: 4,
-                          }}
-                          tabIndex={-1}
-                          title="Select area or district"
-                        >
-                          <ChevronDown
-                            size={15}
-                            style={{
-                              transform: isPlaceDropdownOpen ? "rotate(180deg)" : "none",
-                              transition: "transform 0.15s ease",
-                            }}
-                          />
-                        </button>
-                      </div>
-
-                      {/* Custom Searchable Dropdown */}
-                      {isPlaceDropdownOpen && (
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: "calc(100% + 4px)",
-                            left: 0,
-                            right: 0,
-                            maxHeight: 220,
-                            overflowY: "auto",
-                            backgroundColor: "#ffffff",
-                            border: "1px solid #cbd5e1",
-                            borderRadius: 8,
-                            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.12)",
-                            zIndex: 9999,
-                            padding: 4,
-                          }}
-                        >
-                          <div
-                            onClick={() => {
-                              setIsAddingPlace(true);
-                              setIsPlaceDropdownOpen(false);
-                            }}
-                            style={{
-                              padding: "7px 10px",
-                              fontSize: 11.5,
-                              borderRadius: 6,
-                              cursor: "pointer",
-                              color: "#004d66",
-                              fontWeight: 700,
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 6,
-                              backgroundColor: "#f0fdfa",
-                              borderBottom: "1px solid #ccfbf1",
-                              marginBottom: 4,
-                            }}
-                          >
-                            <Plus size={12} />
-                            <span>+ Add New Area / District...</span>
-                          </div>
-
-                          {places
-                            .filter((p) => {
-                              const q = form.city.toLowerCase().trim();
-                              if (!q) return true;
-                              return (
-                                p.toLowerCase().includes(q) ||
-                                (placeToEmirateMap[p] || "").toLowerCase().includes(q)
-                              );
-                            })
-                            .map((p) => {
-                              const isSelected = form.city.toLowerCase().trim() === p.toLowerCase().trim();
-                              const emirate = placeToEmirateMap[p];
-                              return (
-                                <div
-                                  key={p}
-                                  onClick={() => handleSelectPlace(p)}
-                                  style={{
-                                    padding: "7px 10px",
-                                    fontSize: 12.5,
-                                    borderRadius: 6,
-                                    cursor: "pointer",
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    backgroundColor: isSelected ? "#f0f9ff" : "transparent",
-                                    color: isSelected ? "#0369a1" : "#0f172a",
-                                    fontWeight: isSelected ? 600 : 400,
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    if (!isSelected) e.currentTarget.style.backgroundColor = "#f8fafc";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    if (!isSelected) e.currentTarget.style.backgroundColor = "transparent";
-                                  }}
-                                >
-                                  <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                    {isSelected && <Check size={12} style={{ color: "#0284c7" }} />}
-                                    <span>{p}</span>
-                                  </span>
-                                  {emirate && (
-                                    <span
-                                      style={{
-                                        fontSize: 10.5,
-                                        padding: "1px 6px",
-                                        borderRadius: 4,
-                                        backgroundColor: isSelected ? "#e0f2fe" : "#f1f5f9",
-                                        color: isSelected ? "#0284c7" : "#64748b",
-                                        fontWeight: 500,
-                                      }}
-                                    >
-                                      {emirate}
-                                    </span>
-                                  )}
-                                </div>
-                              );
-                            })}
-
-                          {form.city.trim() &&
-                            !places.some(
-                              (p) => p.toLowerCase() === form.city.trim().toLowerCase()
-                            ) && (
-                              <div
-                                onClick={() => {
-                                  onAddPlace(form.city.trim());
-                                  handleSelectPlace(form.city.trim());
-                                }}
-                                style={{
-                                  padding: "8px 10px",
-                                  fontSize: 12,
-                                  borderRadius: 6,
-                                  cursor: "pointer",
-                                  borderTop: "1px solid #f1f5f9",
-                                  color: "#004d66",
-                                  fontWeight: 600,
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 6,
-                                  backgroundColor: "#f0fdfa",
-                                }}
-                              >
-                                <Plus size={12} />
-                                <span>Add &quot;{form.city.trim()}&quot; to areas</span>
-                              </div>
-                            )}
-                        </div>
-                      )}
-                    </div>
+                    <CustomLightSelect
+                      sheetTitle="Area / District"
+                      placeholder="Select area or district"
+                      value={form.city}
+                      options={places.map((place) => ({ value: place, label: place, subtext: placeToEmirateMap[place] }))}
+                      onChange={handleSelectPlace}
+                      clearable={false}
+                      searchable
+                      onAddNew={(query) => {
+                        setNewPlaceName(query || "");
+                        setIsAddingPlace(true);
+                        setIsPlaceDropdownOpen(false);
+                      }}
+                      addNewLabel="Add new place"
+                    />
                   )}
                 </div>
               </div>
@@ -5252,11 +5098,11 @@ function AddPersonModal({
     const selectedClient = clients.find((c) => c.id === clientId);
     onSave({
       name: name.trim(),
-      designation: designation.trim() || "Healthcare Specialist",
+      designation: designation.trim(),
       department,
       phone: phone.trim(),
       whatsapp: whatsapp.trim() || phone.trim(),
-      email: email.trim() || "contact@facility.ae",
+      email: email.trim() || "",
       linkedin: linkedin.trim() || undefined,
       clientId: clientId || undefined,
       clientName: selectedClient ? selectedClient.name : undefined,
@@ -5424,13 +5270,12 @@ function AddPersonModal({
 
           <div data-mobile-grid="stack" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 12 }}>
             <div>
-              <label className="form-label" style={{ fontSize: 12, marginBottom: 4 }}>Designation / Title *</label>
+              <label className="form-label" style={{ fontSize: 12, marginBottom: 4 }}>Designation / Title (optional)</label>
               <input
                 className="form-input"
                 placeholder="e.g. Chief Biomedical Engineer"
                 value={designation}
                 onChange={(e) => setDesignation(e.target.value)}
-                required
                 style={{ fontSize: 13 }}
               />
             </div>

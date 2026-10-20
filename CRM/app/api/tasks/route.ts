@@ -1,3 +1,5 @@
+import { filterRetiredRecords } from "@/lib/retired-records";
+import { withRetiredResponse } from "@/lib/retired-response";
 import { NextRequest, NextResponse } from "next/server";
 import { getDbPool } from "@/lib/db";
 import type { Task } from "@/types";
@@ -27,6 +29,7 @@ function loadBackupFileTasks(): Task[] | null {
 }
 
 function saveBackupFileTasks(tasks: Task[]): void {
+  tasks = filterRetiredRecords("tasks", tasks);
   try {
     const dir = path.dirname(BACKUP_FILE);
     if (!fs.existsSync(dir)) {
@@ -80,6 +83,7 @@ async function getStoredTasksFromDb(pool: any): Promise<Task[] | null> {
 }
 
 async function saveTasksToDb(pool: any, tasks: Task[]): Promise<boolean> {
+  tasks = filterRetiredRecords("tasks", tasks);
   try {
     const companyId = await getValidCompanyId(pool);
     const jsonStr = JSON.stringify(tasks);
@@ -117,7 +121,7 @@ function deduplicateTasks(tasks: Task[]): Task[] {
   return Array.from(map.values());
 }
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   try {
     let tasks: Task[] | null = null;
     try {
@@ -154,7 +158,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
+async function handlePOST(req: NextRequest) {
   try {
     const body = await req.json();
     let current = memoryTasksCache || loadBackupFileTasks() || [];
@@ -209,7 +213,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function PUT(req: NextRequest) {
+async function handlePUT(req: NextRequest) {
   try {
     const body = await req.json();
     const task: Task = body.task || body;
@@ -254,7 +258,7 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-export async function DELETE(req: NextRequest) {
+async function handleDELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     let targetId = searchParams.get("id");
@@ -296,3 +300,8 @@ export async function DELETE(req: NextRequest) {
     );
   }
 }
+
+export const GET = withRetiredResponse(handleGET, "tasks", "tasks");
+export const POST = withRetiredResponse(handlePOST, "tasks", "tasks");
+export const PUT = withRetiredResponse(handlePUT, "tasks", "tasks");
+export const DELETE = withRetiredResponse(handleDELETE, "tasks", "tasks");
