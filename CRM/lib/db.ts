@@ -1,27 +1,29 @@
 import mysql from "mysql2/promise";
 
-let pool: mysql.Pool | null = null;
+const databaseGlobal = globalThis as typeof globalThis & { fastonmedDbPool?: mysql.Pool };
 
 export function getDbPool() {
-  if (!pool) {
+  if (!databaseGlobal.fastonmedDbPool) {
     const url = process.env.DATABASE_URL;
     if (!url) {
       throw new Error("DATABASE_URL is required for the shared FastOnMed database");
     }
-    pool = mysql.createPool({
+    databaseGlobal.fastonmedDbPool = mysql.createPool({
       uri: url,
       waitForConnections: true,
       connectionLimit: 5,
-      // Release idle sockets between bursts without reducing peak query capacity.
-      maxIdle: 1,
-      idleTimeout: 30_000,
+      // Reuse idle connections: the host limits new connections per hour.
+      maxIdle: 5,
+      idleTimeout: 600_000,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 10_000,
       queueLimit: 0,
       ssl: {
         rejectUnauthorized: false,
       },
     });
   }
-  return pool;
+  return databaseGlobal.fastonmedDbPool;
 }
 
 export interface StemsEmployee {

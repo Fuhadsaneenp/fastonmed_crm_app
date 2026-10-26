@@ -1,4 +1,6 @@
 "use client";
+import "./ticket-details.css";
+import CustomLightSelect from "@/components/CustomLightSelect";
 
 import { useState, useEffect } from "react";
 import { mockServiceTickets, mockEmployees } from "@/lib/mock-data";
@@ -191,23 +193,7 @@ export default function ServicesPage() {
             <span>Service Calendar</span>
           </button>
 
-          <button
-            type="button"
-            className={`btn ${view === "kanban" ? "btn-primary" : "btn-secondary"}`}
-            style={{
-              padding: "6px 14px",
-              fontSize: 12.5,
-              fontWeight: 700,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              boxShadow: view === "kanban" ? "0 1px 3px rgba(0,0,0,0.12)" : "none",
-            }}
-            onClick={() => setView("kanban")}
-          >
-            <LayoutGrid size={15} />
-            <span>Kanban Board</span>
-          </button>
+
 
           <button
             type="button"
@@ -429,7 +415,7 @@ export default function ServicesPage() {
 
       {/* ─── TICKET DETAIL MODAL ─── */}
       {selected && (
-        <div data-mobile-overlay="true"
+        <div className="service-ticket-detail-overlay" data-mobile-overlay="true"
           style={{
             position: "fixed",
             inset: 0,
@@ -443,7 +429,7 @@ export default function ServicesPage() {
           onClick={() => setSelected(null)}
         >
           <div
-            className="card"
+            className="card service-ticket-detail"
             style={{
               width: "100%",
               maxWidth: 620,
@@ -464,11 +450,10 @@ export default function ServicesPage() {
             >
               <div>
                 <h2 style={{ fontWeight: 800, fontSize: 18, margin: 0 }}>{selected.ticketNumber}</h2>
-                <div style={{ marginTop: 4 }}>
-                  <span className={`badge ${getStatusColor(selected.status)}`}>{selected.status}</span>
-                </div>
+
               </div>
               <button
+                aria-label="Close ticket details"
                 onClick={() => setSelected(null)}
                 style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: "#94a3b8" }}
               >
@@ -476,6 +461,23 @@ export default function ServicesPage() {
               </button>
             </div>
 
+            <div className="service-ticket-status">
+              <span id="service-ticket-status-label">Ticket status</span>
+              <CustomLightSelect
+                value={selected.status}
+                options={STATUSES.map(status => ({ value: status, label: status }))}
+                clearable={false}
+                searchable={false}
+                sheetTitle="Ticket status"
+                style={{ flex: 1, minWidth: 0 }}
+                buttonStyle={{ minHeight: 46, borderRadius: 12, background: "#fff", color: "#185947", fontSize: 14 }}
+                onChange={(value) => {
+                  const status = value as ServiceStatus;
+                  updateStatus(selected.id, status);
+                  setSelected({ ...selected, status });
+                }}
+              />
+            </div>
             <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
               {selected.priority === "Critical" && (
                 <div
@@ -496,7 +498,7 @@ export default function ServicesPage() {
                 </div>
               )}
 
-              <div data-mobile-grid="stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div className="service-ticket-fields" data-mobile-grid="stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 {[
                   { label: "Client", value: selected.clientName },
                   {
@@ -516,7 +518,7 @@ export default function ServicesPage() {
                 ].map((f) => (
                   <div key={f.label} style={{ gridColumn: (f as { span?: boolean }).span ? "1 / -1" : undefined }}>
                     <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 2 }}>{f.label}</div>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>{f.value}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{f.value || "—"}</div>
                   </div>
                 ))}
               </div>
@@ -574,32 +576,7 @@ export default function ServicesPage() {
                 </div>
               )}
 
-              <div>
-                <p style={{ fontSize: 12, fontWeight: 600, color: "#64748b", marginBottom: 8 }}>Update Status:</p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {STATUSES.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => {
-                        updateStatus(selected.id, s);
-                        setSelected({ ...selected, status: s });
-                      }}
-                      style={{
-                        padding: "5px 10px",
-                        borderRadius: 6,
-                        border: `1px solid ${STATUS_COLORS[s]}50`,
-                        background: selected.status === s ? STATUS_COLORS[s] : `${STATUS_COLORS[s]}15`,
-                        color: selected.status === s ? "white" : STATUS_COLORS[s],
-                        fontSize: 11,
-                        cursor: "pointer",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
+
             </div>
           </div>
         </div>
@@ -607,7 +584,7 @@ export default function ServicesPage() {
 
       {/* ─── ADD TICKET MODAL ─── */}
       {showAdd && (
-        <div data-mobile-overlay="true"
+        <div className="service-create-page" data-mobile-overlay="true"
           style={{
             position: "fixed",
             inset: 0,
@@ -621,11 +598,11 @@ export default function ServicesPage() {
           onClick={() => setShowAdd(false)}
         >
           <div
-            className="card"
+            className="card service-create-content"
             style={{ width: "100%", maxWidth: 540, animation: "fadeIn 0.2s ease" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div
+            <div className="service-create-heading"
               style={{
                 padding: "20px 24px",
                 borderBottom: "1px solid #f1f5f9",
@@ -633,6 +610,7 @@ export default function ServicesPage() {
                 justifyContent: "space-between",
               }}
             >
+              <button type="button" className="service-create-back" onClick={() => setShowAdd(false)} aria-label="Back to service tickets">←</button>
               <h2 style={{ fontWeight: 700, fontSize: 18, margin: 0 }}>Create Service Ticket</h2>
               <button
                 onClick={() => setShowAdd(false)}
@@ -642,7 +620,7 @@ export default function ServicesPage() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateTicketSubmit}>
+            <form className="service-create-form" onSubmit={handleCreateTicketSubmit}>
               <div data-mobile-grid="stack" style={{ padding: "20px 24px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 <div style={{ gridColumn: "1 / -1" }}>
                   <label className="form-label">Client / Hospital Name *</label>

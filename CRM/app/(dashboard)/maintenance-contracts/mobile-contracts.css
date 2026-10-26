@@ -1,0 +1,80 @@
+.maintenance-mobile-actions { display: none; }
+@media (max-width: 767px) {
+  .maintenance-page { padding: 16px !important; }
+  .maintenance-toolbar { padding: 0 !important; background: transparent !important; border: 0 !important; box-shadow: none !important; margin-bottom: 20px !important; }
+  .maintenance-search-row { margin-bottom: 12px !important; }
+  .maintenance-page-size { display: none !important; }
+  .maintenance-search { width: 100% !important; }
+  .maintenance-search input { height: 48px !important; border-radius: 14px !important; background: white !important; font-size: 14px !important; padding-right: 36px !important; }
+  .maintenance-mobile-actions { display: flex; align-items: center; gap: 8px; }
+  .maintenance-mobile-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 12px; border: 1px solid #dce7e2; border-radius: 12px; background: white; color: #426459; font: inherit; font-size: 13px; cursor: pointer; }
+  .maintenance-mobile-actions .maintenance-add { margin-left: auto; background: #187e65; border-color: #187e65; color: white; font-weight: 600; }
+  .maintenance-mobile-actions button:focus-visible { outline: 3px solid #9acdb8; outline-offset: 2px; }
+  .maintenance-filters[data-open="false"] { display: none !important; }
+  .maintenance-filters[data-open="true"] { display: flex !important; margin-top: 12px; padding: 16px; border: 1px solid #dce7e2; border-radius: 16px; background: white; }
+  .maintenance-filters > div { width: 100%; gap: 12px !important; }
+  .maintenance-filters select { width: 100% !important; min-height: 44px; }
+  .maintenance-filters button { min-height: 44px; }
+  .maintenance-summary { display: flex !important; flex-direction: column; align-items: stretch !important; padding: 0 0 16px !important; gap: 12px !important; }
+  .maintenance-summary > div:first-child { font-size: 12px; color: #71867d; }
+  .maintenance-stats { display: grid !important; grid-template-columns: 1fr 1fr; gap: 8px !important; }
+  .maintenance-stats button { min-height: 56px; padding: 12px !important; border-radius: 14px !important; font-size: 12px !important; gap: 6px !important; flex-wrap: wrap; justify-content: flex-start; text-align: left; }
+  .maintenance-stats button:last-child { grid-column: 1 / -1; min-height: 44px; }
+}
+@media (max-width: 767px) {
+  .maintenance-filters > div:last-child > button:first-child,
+  .maintenance-filters > div:last-child > button:last-child { display: none !important; }
+}
+
+@media (max-width: 767px) {
+  /* The app shell already supplies the outer gutter. */
+  .crm-main:has(.maintenance-page) { padding: 16px 12px 24px !important; }
+  .crm-main .maintenance-page { padding: 0 !important; width: 100%; min-width: 0; }
+  .maintenance-stats { align-items: stretch; }
+  .maintenance-stats button { display: flex !important; flex-direction: column; align-items: flex-start !important; justify-content: center !important; gap: 6px !important; height: auto; min-height: 88px; padding: 14px !important; line-height: 1.4; }
+  .maintenance-stats button > span:first-child { display: none !important; }
+  .maintenance-stats button > span:nth-child(2) { font-size: 19px; line-height: 1.2; }
+  .maintenance-stats button:last-child { flex-direction: row; align-items: center !important; justify-content: flex-start !important; min-height: 48px; }
+  .maintenance-stats button:last-child > span:nth-child(2) { font-size: 16px; }
+  .maintenance-page > .card:has(table) { background: transparent !important; border: 0 !important; border-radius: 0 !important; overflow: visible !important; }
+  .maintenance-page .table-container { overflow: visible !important; width: 100%; }
+  .maintenance-page table[data-mobile-cards] { width: 100% !important; min-width: 0 !important; }
+  .crm-main .maintenance-page table[data-mobile-cards] > tbody > tr { display: grid !important; grid-template-columns: minmax(0, 1fr) !important; gap: 0 !important; padding: 16px !important; width: 100%; min-width: 0; margin-bottom: 12px; }
+  .crm-main .maintenance-page table[data-mobile-cards] > tbody > tr > td { grid-column: 1 / -1 !important; width: 100% !important; min-width: 0 !important; max-width: 100%; padding: 12px 0 !important; border: 0 !important; border-bottom: 1px solid #eff3f1 !important; position: static !important; box-shadow: none !important; overflow: visible !important; white-space: normal !important; }
+  .crm-main .maintenance-page table[data-mobile-cards] > tbody > tr > td:not(:first-child):not([colspan]) { display: grid !important; grid-template-columns: 108px minmax(0, 1fr); gap: 12px !important; align-items: start; text-align: left !important; }
+  .crm-main .maintenance-page table[data-mobile-cards] > tbody > tr > td::before { margin: 0 !important; font-size: 10px !important; line-height: 1.5; padding-top: 2px; }
+  .crm-main .maintenance-page table[data-mobile-cards] td > div { min-width: 0 !important; max-width: 100%; white-space: normal !important; overflow-wrap: anywhere; }
+  .crm-main .maintenance-page table[data-mobile-cards] td a { white-space: normal !important; overflow-wrap: anywhere; }
+  .crm-main .maintenance-page table[data-mobile-cards] td span { max-width: 100%; white-space: normal !important; overflow-wrap: anywhere; }
+  .crm-main .maintenance-page table[data-mobile-cards] > tbody > tr > td:first-child { padding-top: 0 !important; padding-bottom: 16px !important; }
+  .crm-main .maintenance-page table[data-mobile-cards] > tbody > tr > td:last-child { border-bottom: 0 !important; padding-bottom: 0 !important; }
+}
+@media (max-width: 767px) {
+  .crm-main .maintenance-page table[data-mobile-cards] > tbody > tr > td:not(:first-child):not([colspan]) > * { grid-column: 2; }
+  .crm-main .maintenance-page table[data-mobile-cards] > tbody > tr > td:not(:first-child):not([colspan])::before { grid-column: 1; grid-row: 1; }
+  .crm-main .maintenance-page table[data-mobile-cards] > tbody > tr > td:not(:first-child):not([colspan]) > :first-child { grid-row: 1; }
+}
+
+.contract-title-button { border: 0; padding: 0; background: transparent; color: #0f172a; font: inherit; font-weight: 600; font-size: 13px; line-height: 1.4; text-align: left; cursor: pointer; width: 100%; }
+.contract-title-arrow, .contract-mobile-back { display: none; }
+.contract-detail-reference { color: #64748b; font-size: 12px; margin-bottom: 16px; }
+@media (max-width: 767px) {
+  .crm-main .maintenance-page table[data-mobile-cards] > tbody > tr.contract-list-row { padding: 0 !important; border-radius: 16px !important; }
+  .crm-main .maintenance-page table[data-mobile-cards] > tbody > tr.contract-list-row > td:not(:first-child) { display: none !important; }
+  .crm-main .maintenance-page table[data-mobile-cards] > tbody > tr.contract-list-row > td:first-child { padding: 0 !important; border: 0 !important; }
+  .contract-list-row > td:first-child > div > div { display: none !important; }
+  .contract-list-row .contract-title-button { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 16px; min-height: 76px; font-size: 14px; line-height: 1.5; }
+  .contract-title-arrow { display: block; font-size: 25px; color: #82988e; flex-shrink: 0; }
+  .contract-mobile-back { display: inline-flex; align-items: center; min-height: 44px; padding: 0; margin-bottom: 16px; background: transparent; border: 0; color: #006079; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+  body:has(.crm-app-shell) .contract-detail-page[data-mobile-overlay="true"] { padding: 0 !important; background: #f3f6f6 !important; backdrop-filter: none !important; }
+  .contract-detail-page > .contract-detail-content { height: 100% !important; max-height: 100% !important; width: 100% !important; max-width: none !important; padding: 20px 16px !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; box-sizing: border-box; }
+  .contract-detail-content > [data-mobile-grid] { grid-template-columns: minmax(0, 1fr) !important; }
+  .contract-detail-content > div:last-child button { min-height: 44px; }
+}
+
+@media (max-width: 767px) {
+  .contract-grid-list { grid-template-columns: minmax(0, 1fr) !important; gap: 12px !important; }
+  .contract-grid-card > div:not(:first-child), .contract-grid-card > div:first-child > :not(h3) { display: none !important; }
+  .contract-grid-card h3 { font-size: 14px !important; line-height: 1.5 !important; margin: 0 !important; }
+  .contract-grid-card { min-height: 76px; padding: 20px 16px !important; border-radius: 16px !important; }
+}

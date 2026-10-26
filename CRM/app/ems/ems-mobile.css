@@ -1,0 +1,38 @@
+.ems-mobile-title{display:none}
+@media(max-width:767px){
+.ems-app-shell{height:100dvh;min-height:0!important;overflow:hidden}
+.ems-app-shell .ems-mobile-header.mobile-workspace-header{height:106px!important;min-height:106px!important;padding:12px 16px!important;display:flex!important;flex-direction:column!important;gap:10px!important;align-items:stretch!important;flex-shrink:0;position:relative!important;top:auto!important}
+.ems-mobile-header>div:first-child{height:30px;gap:10px!important;flex-wrap:nowrap!important}
+.ems-mobile-header>div:first-child>a{display:none!important}
+.ems-mobile-header>div:first-child>div{border:0!important;padding:0!important;background:transparent!important;letter-spacing:0!important}
+.ems-mobile-header .ems-desktop-title{display:none}
+.ems-mobile-header .ems-mobile-title{display:block;font-size:18px;font-weight:650;color:white}
+.ems-mobile-header>div:last-child{display:flex!important;gap:10px!important;justify-content:space-between;flex-wrap:nowrap!important;width:100%}
+.ems-mobile-header>div:last-child>a{display:none!important}
+.ems-mobile-header>div:last-child>div:first-child>button{height:36px!important;min-height:36px!important;padding:6px 12px!important;border-radius:10px!important;font-size:12px!important}
+.ems-mobile-header>div:last-child>div:last-child>button{min-height:36px!important}
+.ems-app-shell .ems-body{flex:1;min-height:0;overflow:hidden!important;display:flex!important;flex-direction:column!important;gap:0!important}
+.ems-app-shell .ems-section-toggle{margin:12px 16px!important;width:calc(100% - 32px)!important;min-height:42px!important;padding:10px 14px!important;border-radius:12px!important;font-size:13px!important;flex-shrink:0}
+.ems-app-shell .ems-body>.mobile-workspace-content{padding:8px 16px calc(96px + env(safe-area-inset-bottom))!important;min-height:0;flex:1;overflow-y:auto!important;overflow-x:hidden}
+.ems-app-shell .ems-sidebar.open{max-height:45vh;overflow-y:auto;flex-shrink:0}
+.attendance-overview>div:first-child{gap:12px!important;margin-bottom:16px!important}
+.attendance-overview h1{font-size:19px!important;font-weight:650;line-height:1.4}
+.attendance-overview>div:first-child p{font-size:11px!important;line-height:1.5;margin:6px 0 0;color:#7c8f83!important}
+.attendance-overview>div:first-child>div:last-child{display:grid!important;grid-template-columns:40px minmax(0,1fr) 40px;gap:8px!important;width:100%}
+.attendance-overview>div:first-child button{min-height:40px;border-radius:10px;font-size:12px!important;justify-content:center}
+.ems-app-shell .attendance-overview .attendance-summary{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;padding:0!important;gap:0!important;border:1px solid #dfe8e2;border-radius:16px!important;overflow:hidden;margin-bottom:16px!important;box-shadow:none!important}
+.attendance-summary>div{padding:16px!important;border-bottom:1px solid #edf2ef}
+.attendance-summary>div:nth-child(odd){border-right:1px solid #edf2ef}
+.attendance-summary>div:nth-last-child(-n+2){border-bottom:0}
+.attendance-summary>div>div{font-size:10px!important;letter-spacing:.4px;color:#839387!important}
+.attendance-summary strong{font-size:22px!important;font-weight:650!important;margin-top:8px!important;color:#245c46!important}
+.attendance-overview .attendance-month-card{padding:10px!important;overflow:hidden!important;border-radius:16px!important;box-shadow:none!important}
+.attendance-month-card>div{min-width:0!important;grid-template-columns:repeat(7,minmax(0,1fr))!important;gap:4px!important}
+.attendance-month-card>div>div{padding:6px 0!important;font-size:10px!important}
+.attendance-month-card button{min-height:54px!important;padding:6px 2px!important;border-radius:8px!important;min-width:0}
+.attendance-month-card button>div:first-child{justify-content:center!important;position:relative}
+.attendance-month-card button>div:first-child>strong{font-size:12px}
+.attendance-month-card button>div:first-child>span{font-size:0!important}
+.attendance-month-card button[aria-label*="Present"]>div:first-child>span{position:absolute;width:4px;height:4px;border-radius:50%;background:#23865d;bottom:-10px;left:calc(50% - 2px)}
+.attendance-month-card button>div:not(:first-child){display:none}
+}

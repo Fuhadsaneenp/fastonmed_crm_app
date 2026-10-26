@@ -181,6 +181,7 @@ export type LeadContact = {
 };
 
 export type Lead = {
+  leadDate?: string
   id: string
   clientId?: string
   clientName: string
@@ -202,6 +203,7 @@ export type Lead = {
   priority: "Low" | "Medium" | "High" | "Critical"
   notes: string
   quotationNumber?: string
+  invoiceReference?: string
   quotationValue?: number
   quotedItems?: Array<{ product: string; price: number; quantity?: number }>
   nextFollowUp?: string

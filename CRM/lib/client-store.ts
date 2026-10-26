@@ -401,7 +401,16 @@ export function deleteStoredLead(leadId: string): Lead[] {
   return deduplicateLeads(updated);
 }
 
-export async function syncLeadsFromServer(): Promise<Lead[]> {
+let pendingLeadSync: Promise<Lead[]> | null = null;
+export function syncLeadsFromServer(): Promise<Lead[]> {
+  if (pendingLeadSync) return pendingLeadSync;
+  const request = performLeadSync();
+  pendingLeadSync = request;
+  const clear = () => { if (pendingLeadSync === request) pendingLeadSync = null; };
+  void request.then(clear, clear);
+  return request;
+}
+async function performLeadSync(): Promise<Lead[]> {
   if (typeof window === "undefined") return getStoredLeads();
   try {
     const res = await fetch("/api/leads", { cache: "no-store" });
@@ -439,7 +448,7 @@ export async function syncLeadsFromServer(): Promise<Lead[]> {
           } else {
             const localTime = new Date(ll.updatedAt || ll.createdAt || 0).getTime();
             const serverTime = new Date(existingSl.updatedAt || existingSl.createdAt || 0).getTime();
-            if (localTime >= serverTime) {
+            if (localTime > serverTime) {
               leadMap.set(ll.id, {
                 ...existingSl,
                 ...ll,
@@ -452,8 +461,11 @@ export async function syncLeadsFromServer(): Promise<Lead[]> {
       }
 
       const merged = deduplicateLeads(Array.from(leadMap.values()));
-      localStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(merged));
-      window.dispatchEvent(new Event("fastonmed_leads_updated"));
+      const serialized = JSON.stringify(merged);
+      if (localData !== serialized) {
+        localStorage.setItem(LEADS_STORAGE_KEY, serialized);
+        window.dispatchEvent(new Event("fastonmed_leads_updated"));
+      }
 
       if (needsSyncToServer && merged.length > 0) {
         void fetch("/api/leads", {

@@ -1,4 +1,5 @@
 "use client";
+import "./service-track-mobile.css";
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
@@ -339,7 +340,7 @@ export default function ServiceTrackPage() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 18, animation: "fadeIn 0.25s ease" }}>
+    <div className="service-track-page" style={{ display: "flex", flexDirection: "column", gap: 18, animation: "fadeIn 0.25s ease" }}>
       {/* ─── TOP HEADER & ACTIONS ─── */}
       <div
         style={{
@@ -409,13 +410,13 @@ export default function ServiceTrackPage() {
             }}
           >
             <Plus size={16} />
-            <span>+ Schedule Service Task</span>
+            <span>Schedule task</span>
           </button>
         </div>
       </div>
 
       {/* ─── MINIMAL CONTROLS & FILTERS TOOLBAR ─── */}
-      <div
+      <div className="service-track-filters"
         style={{
           padding: "10px 14px",
           display: "flex",

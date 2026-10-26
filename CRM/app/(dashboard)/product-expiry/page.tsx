@@ -348,32 +348,8 @@ function buildExpiryRecords(
     });
   });
 
-  const fromTickets: ExpiryRecord[] = (tickets || [])
-    .filter((ticket) => ticket.status === "Completed" || ticket.status === "Closed" || ticket.visitDate)
-    .map((ticket) => {
-      const client = clientById.get(ticket.clientId) || clients.find((item) => (item.name || "").toLowerCase() === (ticket.clientName || "").toLowerCase());
-      const contact = getClientContact(client);
-      const location = client ? (client.city === client.state ? client.city : `${client.city || ""}, ${client.state || ""}`.replace(/^, |, $/g, "")) : "UAE";
-      const installationDate = ticket.visitDate || ticket.createdAt;
-      return {
-        id: `service-${ticket.id}`,
-        organisation: ticket.clientName || client?.name || "Healthcare Facility",
-        productName: `${ticket.equipment || "Equipment"} - ${ticket.model || "Service"}`,
-        contactPerson: contact.name,
-        contactNumber: contact.phone,
-        expiryDate: addOneYear(installationDate),
-        installationDate,
-        installedBy: "FastonMed" as const,
-        otherTeamName: "",
-        source: "Service" as const,
-        clientId: client?.id,
-        orgType: client?.orgType || "Hospital",
-        location,
-        email: contact.email,
-      };
-    });
-
-  const baseRows = [...fromInvoices, ...fromTickets];
+  // Service visits do not establish product expiry or warranty dates.
+  const baseRows = fromInvoices;
 
   // Filter deleted
   let filtered = baseRows.filter((row) => !deletedIds.includes(row.id));
@@ -388,7 +364,7 @@ function buildExpiryRecords(
 
   // Include custom records with their edits
   const activeCustom = customRecords
-    .filter((c) => !deletedIds.includes(c.id))
+    .filter((c) => !deletedIds.includes(c.id) && !c.id.startsWith("service-"))
     .map((c) => (editedRecords[c.id] ? { ...c, ...editedRecords[c.id] } : c));
 
   const allRows = [...activeCustom, ...filtered];

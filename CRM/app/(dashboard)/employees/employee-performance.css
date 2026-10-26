@@ -1,0 +1,8 @@
+.employee-performance-grid > div { text-align: left !important; border: 1px solid #e8eeea; background: #fafcfb !important; }
+@media(max-width:767px){
+.employee-performance-title { font-size: 15px !important; margin-bottom: 14px !important; }
+.employee-performance-grid { display: grid !important; grid-template-columns: repeat(2,minmax(0,1fr)) !important; gap: 8px !important; margin-bottom: 18px !important; }
+.employee-performance-grid > div { padding: 12px !important; border-radius: 10px !important; min-height: 72px; display: flex; flex-direction: column; justify-content: center; }
+.employee-performance-grid > div > div:first-child { font-size: 21px !important; line-height: 1.2; font-weight: 650 !important; color: #245744 !important; }
+.employee-performance-grid > div > div:last-child { font-size: 10px !important; line-height: 1.4; margin-top: 6px !important; color: #829187 !important; }
+}

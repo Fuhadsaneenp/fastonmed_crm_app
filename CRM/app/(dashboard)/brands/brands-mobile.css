@@ -1,0 +1,28 @@
+@media(max-width:767px) {
+.crm-main .brand-filter-panel { padding: 14px !important; border: 1px solid #dfe8e3 !important; border-radius: 16px !important; box-shadow: none !important; }
+.brand-filter-panel .brand-toolbar { display: grid !important; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 10px !important; }
+.brand-toolbar > div:first-child { grid-column: 1/-1; min-width: 0; }
+.brand-toolbar input { min-height: 44px; font-size: 14px !important; border-radius: 11px !important; width: 100%; }
+.brand-toolbar > select { min-width: 0 !important; width: 100% !important; height: 42px !important; font-size: 12px !important; border-radius: 10px !important; padding: 8px 24px 8px 10px !important; text-overflow: ellipsis; }
+.brand-toolbar .brand-actions { grid-column: 1/-1; display: grid !important; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 8px !important; width: 100%; }
+.brand-actions > div:first-child { display: none !important; }
+.brand-actions > button { width: 100%; min-width: 0; min-height: 42px; font-size: 12px !important; padding: 8px !important; justify-content: center; border-radius: 10px !important; }
+.crm-main .card:has(> .table-container > .brand-table) { border: 0 !important; border-radius: 0 !important; box-shadow: none !important; background: transparent !important; overflow: visible !important; }
+.crm-main .brand-table tbody { display: flex !important; flex-direction: column; gap: 12px; }
+.crm-main .brand-table tbody tr { display: grid !important; grid-template-columns: minmax(0,1fr) auto !important; gap: 10px !important; padding: 16px !important; margin: 0 !important; border: 1px solid #dfe8e3 !important; border-radius: 16px !important; box-shadow: none !important; }
+.brand-table td { min-width: 0 !important; padding: 0 !important; border: 0 !important; }
+.brand-table td::before { display: none !important; }
+.brand-table td[data-label="Brand & Overview"] { grid-column: 1/-1 !important; padding-bottom: 4px !important; }
+.brand-table td[data-label="Brand & Overview"] > div { align-items: center !important; gap: 12px !important; }
+.brand-table td[data-label="Brand & Overview"] > div > div:last-child { min-width: 0; }
+.brand-table td[data-label="Brand & Overview"] > div > div:last-child > div:first-child { font-size: 15px !important; line-height: 1.4; }
+.brand-table td[data-label="Brand & Overview"] > div > div:last-child > div:last-child { font-size: 11px !important; max-width: 100% !important; }
+.brand-table td[data-label="Country of Origin"] { grid-column: 1; }
+.brand-table td[data-label="Catalog Models"] { grid-column: 2; grid-row: 2; text-align: right !important; }
+.brand-table td[data-label="Equipment Categories"] { grid-column: 1/-1; }
+.brand-table td[data-label="Equipment Categories"] > div { flex-wrap: wrap; gap: 5px !important; }
+.brand-table td[data-label="Equipment Categories"] span { font-size: 10px !important; padding: 3px 6px !important; border-radius: 6px !important; }
+.brand-table td[data-label="UAE Distributors"] { grid-column: 1; border-top: 1px solid #edf2ef !important; padding-top: 12px !important; font-size: 12px !important; align-self: center; }
+.brand-table td[data-label="Actions"] { grid-column: 2; border-top: 1px solid #edf2ef !important; padding-top: 12px !important; text-align: right !important; }
+.brand-table td[data-label="Actions"] button { min-height: 40px; font-size: 12px !important; border-radius: 10px !important; }
+}

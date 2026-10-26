@@ -8,7 +8,8 @@ export const dynamic = "force-dynamic";
 
 // Production website owns the active catalogue; CRM must use the same records.
 async function sharedWebsiteCatalog(req: NextRequest): Promise<NextResponse | null> {
-  if (process.env.NODE_ENV !== 'production') return null;
+  // Read the same website catalogue on localhost; keep local writes local.
+  if (process.env.NODE_ENV !== 'production' && req.method !== 'GET') return null;
   const origin = (process.env.WEBSITE_CATALOG_URL || 'https://www.fastonmed.com').replace(/\/$/, '');
   const target = `${origin}/api/admin/products${req.nextUrl.search}`;
   try {

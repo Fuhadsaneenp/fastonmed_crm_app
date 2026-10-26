@@ -1,0 +1,26 @@
+@media(max-width:767px){
+.crm-main .card:has(> .table-container > .catalog-mobile-list){border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important}
+.crm-main .catalog-mobile-list tbody{display:flex!important;flex-direction:column!important;gap:12px!important}
+.crm-main .catalog-mobile-list tbody tr{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:10px!important;padding:14px!important;border:1px solid #dfe9e2!important;border-radius:16px!important;background:white!important;box-shadow:none!important;margin:0!important}
+.catalog-mobile-list td{padding:0!important;border:0!important;min-width:0!important;position:static!important;box-shadow:none!important}
+.catalog-mobile-list td::before{display:none!important}
+.catalog-mobile-list td[data-label=Product]{grid-column:1/-1!important;padding:0 0 12px!important;border-bottom:1px solid #edf2ef!important}
+.catalog-mobile-list td[data-label=Product]>div{align-items:center!important;gap:12px!important}
+.catalog-mobile-list td[data-label=Product]>div>div:first-child{width:58px!important;height:58px!important;border-radius:12px!important;background:#fafcfb!important}
+.catalog-mobile-list td[data-label=Product]>div>div:last-child>div:first-child{font-size:13px!important;line-height:1.5!important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.catalog-mobile-list td[data-label=Product]>div>div:last-child>div:last-child{font-size:10px!important;line-height:1.5!important;margin-top:5px!important;color:#819387!important}
+.catalog-mobile-list td[data-label=Product] strong,.catalog-mobile-list td[data-label=Product] span{font-size:10px!important;color:#6d8878!important}
+.catalog-mobile-list td[data-label=Brand]{display:none!important}
+.catalog-mobile-list td[data-label=Price]{grid-column:1!important;grid-row:2!important;align-self:center;text-align:left!important}
+.catalog-mobile-list td[data-label=Price]>div{font-size:14px!important;color:#1a7659!important;font-weight:650!important}
+.catalog-mobile-list td[data-label="Listed date"]{display:none!important}
+.catalog-mobile-list td[data-label=Action]{grid-column:2!important;grid-row:2!important;text-align:right!important;width:auto!important}
+.catalog-mobile-list td[data-label=Action] button{min-height:38px!important;padding:8px 12px!important;font-size:11px!important;border-radius:10px!important;background:#f4f8f5!important;box-shadow:none!important}
+.catalog-pagination{padding:14px!important;border:1px solid #dfe9e2!important;border-radius:16px!important;box-shadow:none!important;margin-top:16px!important;gap:12px!important}
+.catalog-pagination-summary{font-size:11px!important;gap:10px!important;padding-bottom:12px!important}
+.catalog-pagination select{min-height:38px!important;font-size:11px!important;padding:6px 10px!important;border-radius:10px!important}
+.catalog-pagination-navigation{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto!important;gap:8px!important;width:100%;align-items:center}
+.catalog-pagination-navigation button{min-height:40px!important;padding:8px 10px!important;font-size:11px!important;border-radius:10px!important;gap:4px!important;justify-content:center}
+.catalog-pagination-navigation label{display:flex;align-items:center;justify-content:center;gap:5px!important;font-size:10px!important;white-space:nowrap}
+.catalog-pagination-navigation button:disabled{opacity:.4}
+}

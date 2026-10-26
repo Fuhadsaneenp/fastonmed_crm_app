@@ -1,4 +1,5 @@
 "use client";
+import "./trader-mobile.css";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import OrganisationAvatar from "@/components/OrganisationAvatar";
@@ -194,7 +195,7 @@ export default function CompaniesPage() {
           {/* Category Filter */}
           <CustomLightSelect
             value={categoryFilter}
-            options={["All", ...CATEGORIES]}
+            options={[{ value: "All", label: "All categories" }, ...CATEGORIES.map(value => ({ value, label: value }))]}
             onChange={(val) => setCategoryFilter(val)}
             activeColor={categoryFilter !== "All"}
             style={{ width: "auto", minWidth: 175 }}
@@ -242,6 +243,7 @@ export default function CompaniesPage() {
         <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>
           <strong>{filtered.length}</strong> trader companies
         </p>
+        {(search || categoryFilter !== "All" || partnershipFilter !== "All") && <button type="button" className="trader-reset-filters" onClick={() => { setSearch(""); setCategoryFilter("All"); setPartnershipFilter("All"); }}>Reset filters</button>}
       </div>
 
       {/* Trader company list */}
@@ -504,7 +506,7 @@ export default function CompaniesPage() {
                               }
                             }}
                           >
-                            <span>Action</span>
+                            <span>Manage</span>
                             <ChevronDown
                               size={12}
                               style={{

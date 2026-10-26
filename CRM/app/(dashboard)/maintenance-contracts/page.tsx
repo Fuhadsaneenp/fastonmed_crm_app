@@ -1,4 +1,5 @@
 "use client";
+import "./mobile-contracts.css";
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
@@ -165,6 +166,7 @@ export default function MaintenanceContractsPage() {
 
   // Search & Filter controls matching screenshot
   const [search, setSearch] = useState("");
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [serviceTypeFilter, setServiceTypeFilter] = useState<string>("All");
@@ -733,10 +735,10 @@ export default function MaintenanceContractsPage() {
   };
 
   return (
-    <div style={{ padding: "20px 24px", maxWidth: 1440, margin: "0 auto" }}>
+    <div className="maintenance-page" style={{ padding: "20px 24px", maxWidth: 1440, margin: "0 auto" }}>
       {/* ================= TOP CONTROLS BAR (MATCHING SCREENSHOT) ================= */}
       <div
-        className="card"
+        className="card maintenance-toolbar"
         style={{
           padding: "16px 20px",
           marginBottom: 16,
@@ -767,7 +769,7 @@ export default function MaintenanceContractsPage() {
           </div>
         )}
         {/* Row 1: Entries + Search Box */}
-        <div
+        <div className="maintenance-search-row"
           style={{
             display: "flex",
             alignItems: "center",
@@ -778,7 +780,7 @@ export default function MaintenanceContractsPage() {
           }}
         >
           {/* Showing [ 10 ⌵ ] entries */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#475569" }}>
+          <div className="maintenance-page-size" style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#475569" }}>
             <span>Showing</span>
             <select
               className="form-input"
@@ -805,7 +807,7 @@ export default function MaintenanceContractsPage() {
           </div>
 
           {/* Search by title, contractor, organisation... */}
-          <div style={{ position: "relative", width: 380, maxWidth: "100%" }}>
+          <div className="maintenance-search" style={{ position: "relative", width: 380, maxWidth: "100%" }}>
             <Search
               size={15}
               style={{
@@ -824,7 +826,8 @@ export default function MaintenanceContractsPage() {
                 setSearch(e.target.value);
                 setCurrentPage(1);
               }}
-              placeholder="Search by title, contractor, organisation..."
+              aria-label="Search contracts"
+              placeholder="Search contracts or organisations"
               style={{ paddingLeft: 36, height: 38, fontSize: 13 }}
             />
             {search && (
@@ -850,8 +853,15 @@ export default function MaintenanceContractsPage() {
           </div>
         </div>
 
+        <div className="maintenance-mobile-actions">
+          <button type="button" aria-expanded={mobileFiltersOpen} aria-controls="maintenance-filters" onClick={() => setMobileFiltersOpen(open => !open)}>
+            <Layers size={16} /> Filters{serviceTypeFilter !== "All" || statusFilter !== "All" || sortBy !== "default" ? " •" : ""}
+          </button>
+          <button type="button" aria-label="Refresh contracts" disabled={isSyncing} onClick={() => void refreshContracts(true)}><RefreshCw size={17} /></button>
+          <button type="button" className="maintenance-add" onClick={handleOpenAdd}><Plus size={17} /> Add contract</button>
+        </div>
         {/* Row 2: Category/Type filter, Status filter, Sort filter, Grid/List toggle, Add button */}
-        <div
+        <div id="maintenance-filters" className="maintenance-filters" data-open={mobileFiltersOpen}
           style={{
             display: "flex",
             alignItems: "center",
@@ -1020,7 +1030,7 @@ export default function MaintenanceContractsPage() {
       </div>
 
       {/* ================= SUB-BAR: COUNT + STATS INDICATORS ================= */}
-      <div
+      <div className="maintenance-summary"
         style={{
           display: "flex",
           alignItems: "center",
@@ -1037,7 +1047,7 @@ export default function MaintenanceContractsPage() {
           <strong style={{ color: "#0f172a" }}>{filteredAndSortedContracts.length}</strong> contracts
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div className="maintenance-stats" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <button
             type="button"
             onClick={() => {
@@ -1347,14 +1357,15 @@ export default function MaintenanceContractsPage() {
                         backgroundColor: "#ffffff",
                         transition: "background 0.12s ease",
                       }}
-                      className="hover:bg-slate-50"
+                      className="hover:bg-slate-50 contract-list-row"
                     >
                       {/* 1. Title (No awkward line breaks on badges) */}
                       <td data-label="Title" style={{ padding: "12px 16px", verticalAlign: "middle", borderRight: "1px solid #f1f5f9", borderBottom: "1px solid #f1f5f9" }}>
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontWeight: 600, fontSize: 13, color: "#0f172a", lineHeight: 1.35 }}>
+                          <button type="button" className="contract-title-button" onClick={(event) => { event.stopPropagation(); setSelectedContract(c); }}>
                             {c.title || `Maintenance Agreement ${c.contractNumber}`}
-                          </div>
+                            <span aria-hidden="true" className="contract-title-arrow">›</span>
+                          </button>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, whiteSpace: "nowrap" }}>
                             <span
                               style={{
@@ -1769,7 +1780,7 @@ export default function MaintenanceContractsPage() {
         </div>
       ) : (
         /* ================= GRID VIEW ================= */
-        <div data-mobile-grid="stack"
+        <div className="contract-grid-list" data-mobile-grid="stack"
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
@@ -1789,7 +1800,7 @@ export default function MaintenanceContractsPage() {
             return (
               <div
                 key={c.id}
-                className="card"
+                className="card contract-grid-card"
                 onClick={() => setSelectedContract(c)}
                 style={{
                   padding: 18,
@@ -1920,7 +1931,7 @@ export default function MaintenanceContractsPage() {
 
       {/* ================= VIEW DETAIL MODAL ================= */}
       {selectedContract && (
-        <div data-mobile-overlay="true"
+        <div className="contract-detail-page" data-mobile-overlay="true"
           style={{
             position: "fixed",
             inset: 0,
@@ -1935,7 +1946,7 @@ export default function MaintenanceContractsPage() {
           onClick={() => setSelectedContract(null)}
         >
           <div
-            className="card"
+            className="card contract-detail-content"
             style={{
               width: "100%",
               maxWidth: 620,
@@ -1948,6 +1959,7 @@ export default function MaintenanceContractsPage() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
+            <button type="button" className="contract-mobile-back" onClick={() => setSelectedContract(null)}>← Back to contracts</button>
             {/* Modal Header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, borderBottom: "1px solid #f1f5f9", paddingBottom: 12 }}>
               <div>
@@ -1979,6 +1991,7 @@ export default function MaintenanceContractsPage() {
               </button>
             </div>
 
+            <div className="contract-detail-reference">{selectedContract.contractNumber} · {(selectedContract.equipments || []).length} equipment unit(s)</div>
             {/* Contract Info Grid */}
             <div data-mobile-grid="stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
               <div style={{ padding: 12, borderRadius: 8, background: "#f8fafc", border: "1px solid #e2e8f0" }}>

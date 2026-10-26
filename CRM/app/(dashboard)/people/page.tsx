@@ -1,4 +1,5 @@
 "use client";
+import LeadReceivedDate from "@/components/LeadReceivedDate";
 
 import { useState, useEffect, useRef } from "react";
 import DirectoryPagination from "@/components/DirectoryPagination";
@@ -1376,7 +1377,7 @@ function PersonDetailModal({
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               {/* Refined Avatar */}
-              <div
+              <div className="person-notes-info"
                 style={{
                   width: 52,
                   height: 52,
@@ -1814,7 +1815,7 @@ function PersonDetailModal({
           {activeTab === "overview" && (
             <div data-mobile-grid="stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
               {/* Direct Contact Card */}
-              <div
+              <div className="person-org-history"
                 style={{
                   padding: "18px 20px",
                   borderRadius: 14,
@@ -1907,7 +1908,7 @@ function PersonDetailModal({
               </div>
 
               {/* Healthcare Facility Card */}
-              <div
+              <div className="person-org-info"
                 style={{
                   padding: "18px 20px",
                   borderRadius: 14,
@@ -1949,7 +1950,7 @@ function PersonDetailModal({
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #edf2f7", paddingBottom: 8 }}>
                         <span style={{ color: "#64748b" }}>Location / City:</span>
-                        <span style={{ fontWeight: 500, color: "#334155" }}>{client.city}, {client.state}</span>
+                        <span style={{ fontWeight: 500, color: "#334155" }}>{Array.from(new Set([client.city, client.state].filter(Boolean))).join(", ") || "Not recorded"}</span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #edf2f7", paddingBottom: 8 }}>
                         <span style={{ color: "#64748b" }}>Installed Equipment:</span>
@@ -2056,7 +2057,7 @@ function PersonDetailModal({
                   </div>
                 ) : (
                   <div style={{ fontSize: 12.5, color: "#64748b", padding: "6px 0" }}>
-                    Currently at <strong>{person.clientName || "Healthcare Provider"}</strong> No previous organisations recorded.
+                    No previous organisations recorded.
                   </div>
                 )}
               </div>
@@ -2496,6 +2497,7 @@ function PersonDetailModal({
                           <div style={{ fontWeight: 600, fontSize: 13.5, color: "#0f172a" }}>
                             {lead.product}
                           </div>
+                          <LeadReceivedDate lead={lead} />
                           <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
                             Category: {lead.category} • Qty: {lead.quantity} units • Specialist: {lead.assignedTo}
                           </div>

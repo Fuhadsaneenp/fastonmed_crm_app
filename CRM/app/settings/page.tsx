@@ -284,9 +284,9 @@ return result;`;
   };
 
   return (
-    <div style={{ maxWidth: 1040, margin: "0 auto", animation: "fadeIn 0.3s ease" }}>
+    <div className="settings-page" style={{ maxWidth: 1040, margin: "0 auto", animation: "fadeIn 0.3s ease" }}>
       {/* Main Company Profile Card */}
-      <div className="card" style={{ padding: "32px 36px", borderRadius: 14 }}>
+      <div className="card settings-company-card" style={{ padding: "32px 36px", borderRadius: 14 }}>
         <div style={{ marginBottom: 28 }}>
           <h1 style={{ fontWeight: 800, fontSize: 22, color: "#002735", margin: 0 }}>
             Company Profile
@@ -667,7 +667,7 @@ return result;`;
       </div>
 
       {/* ─── ZOHO BOOKS INTEGRATION & REAL DATA SYNC ─────────────────────────── */}
-      <div className="card" style={{ padding: "32px 36px", borderRadius: 14, marginTop: 24, border: "1px solid #e2e8f0" }}>
+      <div className="card zoho-integration-card" style={{ padding: "32px 36px", borderRadius: 14, marginTop: 24, border: "1px solid #e2e8f0" }}>
         {/* Card Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 14 }}>
           <div>
@@ -726,7 +726,7 @@ return result;`;
         </div>
 
         {/* Sync Mode Selector */}
-        <div
+        <div className="zoho-mode-tabs"
           style={{
             display: "inline-flex",
             background: "#f1f5f9",
@@ -738,6 +738,7 @@ return result;`;
         >
           <button
             type="button"
+            aria-pressed={syncTab === "connect"}
             onClick={() => setSyncTab("connect")}
             style={{
               padding: "7px 14px",
@@ -752,10 +753,11 @@ return result;`;
               transition: "all 0.15s ease",
             }}
           >
-            ✅ Auto Connect
+            Connect
           </button>
           <button
             type="button"
+            aria-pressed={syncTab === "webhook"}
             onClick={() => setSyncTab("webhook")}
             style={{
               padding: "7px 14px",
@@ -770,10 +772,11 @@ return result;`;
               transition: "all 0.15s ease",
             }}
           >
-            🔗 Advanced Webhook
+            Webhook
           </button>
           <button
             type="button"
+            aria-pressed={syncTab === "oauth"}
             onClick={() => setSyncTab("oauth")}
             style={{
               padding: "7px 14px",
@@ -788,10 +791,11 @@ return result;`;
               transition: "all 0.15s ease",
             }}
           >
-            ⚡ Direct Zoho Books REST API
+            API setup
           </button>
           <button
             type="button"
+            aria-pressed={syncTab === "payload"}
             onClick={() => setSyncTab("payload")}
             style={{
               padding: "7px 14px",
@@ -806,13 +810,13 @@ return result;`;
               transition: "all 0.15s ease",
             }}
           >
-            📋 Paste Zoho JSON Directly
+            Import JSON
           </button>
         </div>
 
         {/* Tab 0: OAuth Connect */}
         {syncTab === "connect" && (
-          <div
+          <div className="zoho-connection-panel"
             style={{
               backgroundColor: "#f8fafc",
               border: "1px solid #e2e8f0",
@@ -1048,7 +1052,7 @@ return result;`}
         )}
 
         {/* Action Buttons & Sync Status */}
-        <div
+        <div className="zoho-sync-actions"
           style={{
             borderTop: "1px solid #f1f5f9",
             paddingTop: 20,

@@ -1,4 +1,5 @@
 "use client";
+import "./client-work-mobile.css";
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import * as Popover from "@radix-ui/react-popover";
@@ -92,9 +93,10 @@ const STATUS_CONFIG: Record<string, { label: string; short: string; pillShort?: 
 export default function ClientWorkCalendar() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [currentYear, setCurrentYear] = useState(2026);
-  const [currentMonth, setCurrentMonth] = useState(8); // September (0-indexed: 8 = Sep)
+  const [currentYear, setCurrentYear] = useState(() => new Date().getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(() => new Date().getMonth());
   
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   // Filters
   const [selectedClient, setSelectedClient] = useState<string>("All");
   const [clientMenuOpen, setClientMenuOpen] = useState(false);
@@ -196,7 +198,7 @@ export default function ClientWorkCalendar() {
 
       // Status filter
       if (selectedStatus !== "All") {
-        const normStatus = t.status === "Completed" ? "Approved" : t.status;
+        const normStatus = t.status === "Approved" ? "Completed" : t.status;
         if (normStatus !== selectedStatus) return false;
       }
       // Client filter
@@ -320,10 +322,10 @@ export default function ClientWorkCalendar() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10, animation: "fadeIn 0.2s ease" }}>
+    <div className="client-work-calendar" style={{ display: "flex", flexDirection: "column", gap: 10, animation: "fadeIn 0.2s ease" }}>
       {/* Unified Compact Command Bar */}
       <div
-        className="card"
+        className="card client-calendar-toolbar"
         style={{
           padding: "10px 14px",
           borderRadius: 10,
@@ -347,7 +349,7 @@ export default function ClientWorkCalendar() {
         >
           {/* Left: Month Navigator, Today & Badge */}
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-            <div
+            <div className="calendar-month-control"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -438,29 +440,9 @@ export default function ClientWorkCalendar() {
               </button>
             </div>
 
-            <button
-              type="button"
-              onClick={handleGoToday}
-              style={{
-                height: 32,
-                padding: "0 10px",
-                borderRadius: 7,
-                fontSize: 12,
-                fontWeight: 600,
-                backgroundColor: "#ffffff",
-                color: "#334155",
-                border: "1px solid #e2e8f0",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-              }}
-            >
-              <CalendarIcon size={13} color="#64748b" />
-              <span>Today</span>
-            </button>
 
-            <span
+
+            <span className="calendar-task-count"
               style={{
                 backgroundColor: "#eaf8f4",
                 color: "#004d66",
@@ -472,12 +454,14 @@ export default function ClientWorkCalendar() {
                 whiteSpace: "nowrap",
               }}
             >
-              {filteredTasks.length} Assigned
+              {filteredTasks.length} tasks this month
             </span>
           </div>
 
           {/* Right: Filters & New Task */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+          <div className="calendar-filter-controls" data-filters-open={mobileFiltersOpen} style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <button type="button" className="calendar-filter-toggle" aria-expanded={mobileFiltersOpen} aria-controls="calendar-filter-fields" onClick={() => setMobileFiltersOpen(value => !value)}><Filter size={15}/>Filters{[selectedClient !== "All", selectedMember !== "All", selectedStage !== "All Stages"].filter(Boolean).length > 0 && <span>{[selectedClient !== "All", selectedMember !== "All", selectedStage !== "All Stages"].filter(Boolean).length}</span>}</button>
+            <div id="calendar-filter-fields" className="calendar-filter-fields">
             {/* Searchable client filter */}
             <Popover.Root open={clientMenuOpen} onOpenChange={(open) => { setClientMenuOpen(open); if (!open) setClientSearch(""); }}>
               <Popover.Trigger asChild>
@@ -547,12 +531,14 @@ export default function ClientWorkCalendar() {
               />
             </div>
 
+            <button type="button" className="calendar-reset-filters" onClick={() => { setSelectedClient("All"); setSelectedMember("All"); setSelectedStage("All Stages"); setSelectedStatus("All"); }}>Reset filters</button>
+            </div>
             {/* Create Task Button */}
             <button
               type="button"
               className="btn btn-primary"
               onClick={() => {
-                setModalDatePrefill("2026-09-06");
+                setModalDatePrefill(new Date().toLocaleDateString("en-CA"));
                 setEditingTask(null);
                 setShowCreateModal(true);
               }}
@@ -580,7 +566,7 @@ export default function ClientWorkCalendar() {
         </div>
 
         {/* Bottom Filter Row: Minimal Inline Status Filter Pills */}
-        <div
+        <div className="client-calendar-status"
           style={{
             display: "flex",
             alignItems: "center",
@@ -605,6 +591,7 @@ export default function ClientWorkCalendar() {
 
           <button
             type="button"
+            aria-pressed={selectedStatus === "All"}
             onClick={() => setSelectedStatus("All")}
             style={{
               height: 26,
@@ -639,12 +626,13 @@ export default function ClientWorkCalendar() {
 
           {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
             const isSelected = selectedStatus === key;
-            const count = tasks.filter((t) => t.status === key).length;
+            const count = tasks.filter((t) => (t.status === "Approved" ? "Completed" : t.status) === key).length;
             return (
               <button
                 key={key}
                 type="button"
-                onClick={() => setSelectedStatus(isSelected ? "All" : key)}
+                aria-pressed={isSelected}
+                onClick={() => setSelectedStatus(key)}
                 style={{
                   height: 26,
                   display: "inline-flex",
@@ -695,7 +683,7 @@ export default function ClientWorkCalendar() {
 
       {/* 2. Month Calendar Grid */}
       <div
-        className="card"
+        className="card client-work-month-panel"
         style={{
           padding: "12px 14px",
           borderRadius: 10,
@@ -706,7 +694,7 @@ export default function ClientWorkCalendar() {
           boxSizing: "border-box",
         }}
       >
-        <div style={{ minWidth: 780, width: "100%" }}>
+        <div className="client-calendar-grid-wrap" style={{ minWidth: 780, width: "100%" }}>
           {/* Days of week header */}
           <div
             style={{
@@ -768,6 +756,7 @@ export default function ClientWorkCalendar() {
               return (
                 <div
                   key={`${cell.dateStr}-${idx}`}
+                  className="client-calendar-day"
                   onClick={() => {
                     setSelectedDayPopup({
                       dateStr: cell.dateStr,
@@ -792,6 +781,7 @@ export default function ClientWorkCalendar() {
                     cursor: "pointer",
                   }}
                 >
+                  <button type="button" className="client-calendar-day-tap" aria-label={`${cell.dayNum} ${MONTH_NAMES[currentMonth]}, ${cell.tasks.length} tasks`} onClick={(event) => { event.stopPropagation(); setSelectedDayPopup({ dateStr: cell.dateStr, dayNum: cell.dayNum }); }} />
                   {/* Cell Header: Date + Count Badge + Quick Add */}
                   <div
                     style={{
@@ -857,7 +847,7 @@ export default function ClientWorkCalendar() {
                       {/* Quick Add Button */}
                       <button
                         type="button"
-                        onClick={() => handleOpenCreateForDate(cell.dateStr)}
+                        onClick={(event) => { event.stopPropagation(); handleOpenCreateForDate(cell.dateStr); }}
                         style={{
                           width: 18,
                           height: 18,
@@ -1547,7 +1537,7 @@ function TaskEditModal({
   };
 
   return (
-    <div data-mobile-overlay="true"
+    <div className="calendar-task-page" data-mobile-overlay="true"
       style={{
         position: "fixed",
         inset: 0,
@@ -1564,7 +1554,7 @@ function TaskEditModal({
       }}
     >
       <div
-        className="card"
+        className="card calendar-task-content"
         style={{
           maxWidth: 800,
           width: "100%",
@@ -1684,7 +1674,7 @@ function TaskEditModal({
           </div>
         )}
 
-        <form onSubmit={handleUpdate} style={{ display: "flex", flexDirection: "column", gap: 13 }}>
+        <form className="calendar-task-form" onSubmit={handleUpdate} style={{ display: "flex", flexDirection: "column", gap: 13 }}>
           <div>
             <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#334155", marginBottom: 5 }}>
               Task Title

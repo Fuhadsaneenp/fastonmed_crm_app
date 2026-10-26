@@ -150,7 +150,14 @@ export async function POST(req: NextRequest) {
 
     // Support bulk sync
     if (body.action === "sync" && Array.isArray(body.quotes)) {
-      const quotes: Quotation[] = body.quotes;
+      const currentQuotes = await getResolvedQuotations();
+      const byKey = new Map(currentQuotes.map(quote => [quote.quotationNumber || quote.id, quote]));
+      for (const incoming of body.quotes as Quotation[]) {
+        const key = incoming.quotationNumber || incoming.id;
+        const existing = byKey.get(key);
+        if (!existing || Date.parse(incoming.updatedAt || "") > Date.parse(existing.updatedAt || "")) byKey.set(key, incoming);
+      }
+      const quotes = [...byKey.values()];
       memoryQuotationsCache = quotes;
       saveBackupFileQuotations(quotes);
       const pool = getDbPool();

@@ -1,4 +1,5 @@
 "use client";
+import "./marketing-mobile.css";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -64,7 +65,7 @@ export default function MarketingLayout({
   ];
 
   return (
-    <div
+    <div className="marketing-shell"
       style={{
         minHeight: "100vh",
         backgroundColor: "#f8fafc",
@@ -74,7 +75,7 @@ export default function MarketingLayout({
       }}
     >
       {/* ================= MARKETING TOP HEADER BAR ================= */}
-      <header className="mobile-workspace-header"
+      <header className="mobile-workspace-header marketing-header"
         style={{
           height: 64,
           backgroundColor: "#002735",
@@ -90,7 +91,7 @@ export default function MarketingLayout({
         }}
       >
         {/* Left: Back Button + Brand Logo + Platform Badge */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div className="marketing-header-leading" style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <button
             type="button"
             onClick={() => {
@@ -154,6 +155,7 @@ export default function MarketingLayout({
             PERFORMANCE MARKETING
           </div>
 
+          <span className="marketing-mobile-title">Marketing</span>
           {/* Navigation Tabs inside Header */}
           <nav
             style={{
@@ -215,7 +217,7 @@ export default function MarketingLayout({
         </div>
 
         {/* Right: Quick Stats + Hub Link + User Menu */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div className="marketing-header-actions" style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div
             style={{
               padding: "4px 12px",

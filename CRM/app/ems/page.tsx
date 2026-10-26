@@ -1,4 +1,5 @@
 "use client";
+import "./ems-mobile.css";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -994,7 +995,7 @@ export default function EMSDashboardPage() {
   ];
 
   return (
-    <div
+    <div className="ems-app-shell"
       style={{
         minHeight: "100vh",
         backgroundColor: "#f8fafc",
@@ -1005,7 +1006,7 @@ export default function EMSDashboardPage() {
     >
       <GlobalImpersonationBar />
       {/* ================= TOP NAVIGATION BAR ================= */}
-      <header className="mobile-workspace-header"
+      <header className="mobile-workspace-header ems-mobile-header"
         style={{
           height: 64,
           backgroundColor: "#002735",
@@ -1034,7 +1035,7 @@ export default function EMSDashboardPage() {
               letterSpacing: "0.5px",
             }}
           >
-            EMS PLATFORM
+            <span className="ems-desktop-title">EMS PLATFORM</span><span className="ems-mobile-title">Employee workspace</span>
           </div>
         </div>
 

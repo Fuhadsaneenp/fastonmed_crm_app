@@ -23,17 +23,17 @@ export default function AttendanceCalendar({ records, month, onMonthChange, load
     return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
   };
   const avgHours = records.length ? (records.reduce((sum, entry) => sum + workedSeconds(entry), 0) / records.length / 3600).toFixed(1) : '—';
-  return <section>
+  return <section className="attendance-overview">
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
       <div><h1 style={{ fontSize: 22, color: '#003649', margin: 0 }}>{memberName ? `${memberName}’s attendance` : 'My attendance'} · {title}</h1><p style={{ color: '#64748b', fontSize: 12 }}>Recorded automatically when {memberName ? "this team member opens" : "you open"} the CRM · India time</p></div>
       <div style={{ display: 'flex', gap: 8 }}><button className="btn btn-secondary" onClick={() => previous(-1)} aria-label="Previous month">‹</button><button className="btn btn-secondary" onClick={() => onMonthChange(today.slice(0, 7))}>Today</button><button className="btn btn-secondary" onClick={() => previous(1)} aria-label="Next month">›</button></div>
     </div>
     {error && <p role="alert" style={{ color: '#b45309' }}>{error} <button onClick={onRetry}>Retry</button></p>}
     {loading && <p role="status">Loading attendance…</p>}
-    <div data-mobile-grid="stack" className="card" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(130px,1fr))', gap: 20, padding: 24, marginBottom: 24 }}>
+    <div className="card attendance-summary" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(130px,1fr))', gap: 20, padding: 24, marginBottom: 24 }}>
       {[['AVG LOGIN', avgTime('checkIn')], ['AVG LOGOUT', avgTime('checkOut')], ['AVG HOURS', avgHours], ['PRESENT', `${records.length} days`]].map(([label, value]) => <div key={label}><div style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>{label}</div><strong style={{ display: 'block', marginTop: 8, fontSize: 22, color: '#003649' }}>{value}</strong></div>)}
     </div>
-    <div className="card" style={{ padding: 20, overflowX: 'auto' }}><div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,minmax(95px,1fr))', gap: 10, minWidth: 735 }}>
+    <div className="card attendance-month-card" style={{ padding: 20, overflowX: 'auto' }}><div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,minmax(95px,1fr))', gap: 10, minWidth: 735 }}>
       {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => <div key={day} style={{ textAlign: 'center', padding: 12, color: '#64748b', fontSize: 12, fontWeight: 600 }}>{day}</div>)}
       {Array.from({ length: offset }, (_, index) => <div key={`blank-${index}`} />)}
       {Array.from({ length: days }, (_, index) => {

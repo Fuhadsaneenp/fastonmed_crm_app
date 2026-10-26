@@ -1,364 +1,102 @@
 "use client";
-import { useState } from "react";
-import {
-  mockClients, mockLeads, mockServiceTickets,
-  mockEmployees, monthlyRevenueData, productSalesData, leadSourceData,
-} from "@/lib/mock-data";
+import "./reports.css";
+import { useEffect, useRef, useState } from "react";
+import { getZohoLiveInvoices } from "@/lib/zoho-live-invoices";
+import { getStoredLeads } from "@/lib/client-store";
+import { getStoredServiceTickets } from "@/lib/service-store";
 import { formatCurrency } from "@/lib/utils";
-import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line,
-} from "recharts";
-import toast from "react-hot-toast";
-
-const employeeSalesData = mockEmployees
-  .filter((e) => e.performance.revenue > 0)
-  .map((e) => ({ name: e.name.split(" ")[0], revenue: e.performance.revenue, deals: e.performance.dealsClosed }));
-
-const serviceData = [
-  { month: "Apr", resolved: 18, open: 5 },
-  { month: "May", resolved: 22, open: 7 },
-  { month: "Jun", resolved: 19, open: 4 },
-  { month: "Jul", resolved: 28, open: 9 },
-  { month: "Aug", resolved: 25, open: 6 },
-  { month: "Sep", resolved: 12, open: 5 },
-];
+import type { Invoice, Lead, ServiceTicket } from "@/types";
+import { RefreshCw, Download, Printer, ArrowUpRight, Wallet, CircleDollarSign, Clock, Target } from "lucide-react";
+import Link from "next/link";
 
 export default function ReportsPage() {
-  const [activeTab, setActiveTab] = useState<"sales" | "service" | "marketing" | "customers">("sales");
-
-  const totalRevenue = mockClients.reduce((s, c) => s + c.totalRevenue, 0);
-  const totalLeadValue = mockLeads.reduce((s, l) => s + l.estimatedValue, 0);
-  const conversionRate = mockLeads.length > 0 ? Math.round((mockLeads.filter((l) => l.stage === "Won").length / mockLeads.length) * 100) : 0;
-  const resolvedTickets = mockServiceTickets.filter((t) => t.status === "Completed").length;
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, animation: "fadeIn 0.3s ease" }}>
-      {/* Header KPIs */}
-      <div data-mobile-grid="metrics" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
-        {[
-          { label: "Total Revenue", value: formatCurrency(totalRevenue), icon: "💰", color: "#059669" },
-          { label: "Pipeline Value", value: formatCurrency(totalLeadValue), icon: "📊", color: "#2563eb" },
-          { label: "Conversion Rate", value: `${conversionRate}%`, icon: "🎯", color: "#7c3aed" },
-          { label: "Tickets Resolved", value: resolvedTickets.toString(), icon: "✅", color: "#d97706" },
-        ].map((s) => (
-          <div key={s.label} className="card" style={{ padding: "16px 20px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <div>
-                <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>{s.label}</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</div>
-              </div>
-              <span style={{ fontSize: 28 }}>{s.icon}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Tabs */}
-      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ display: "flex", borderBottom: "1px solid #f1f5f9", padding: "0 24px", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex" }}>
-            {(["sales", "service", "marketing", "customers"] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                style={{
-                  background: "none", border: "none", padding: "14px 16px",
-                  cursor: "pointer", fontSize: 14, fontFamily: "Inter, sans-serif",
-                  fontWeight: activeTab === tab ? 600 : 400,
-                  color: activeTab === tab ? "#2563eb" : "#64748b",
-                  borderBottom: activeTab === tab ? "2px solid #2563eb" : "2px solid transparent",
-                  textTransform: "capitalize",
-                }}
-              >
-                {tab === "sales" ? "💰 Sales" : tab === "service" ? "🔧 Service" : tab === "marketing" ? "📢 Marketing" : "👥 Customers"}
-              </button>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 8, padding: "8px 0" }}>
-            <button className="btn btn-secondary" onClick={() => toast.success("Report exported to PDF!")}>📄 Export PDF</button>
-            <button className="btn btn-secondary" onClick={() => toast.success("Report exported to CSV!")}>📊 Export CSV</button>
-          </div>
-        </div>
-
-        <div style={{ padding: 24 }}>
-          {/* SALES TAB */}
-          {activeTab === "sales" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-              <div data-mobile-grid="stack" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 20 }}>
-                <div>
-                  <h3 style={{ fontWeight: 700, fontSize: 14, marginBottom: 14 }}>Monthly Revenue Trend</h3>
-                  <ResponsiveContainer width="100%" height={240}>
-                    <AreaChart data={monthlyRevenueData}>
-                      <defs>
-                        <linearGradient id="grad1" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#2563eb" stopOpacity={0.15} />
-                          <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-                      <YAxis tickFormatter={(v) => `AED ${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-                      <Tooltip formatter={(v: unknown) => formatCurrency(v as number)} contentStyle={{ borderRadius: 8, border: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.1)", fontSize: 12 }} />
-                      <Area type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={2.5} fill="url(#grad1)" name="Revenue" />
-                      <Line type="monotone" dataKey="target" stroke="#0891b2" strokeWidth={2} strokeDasharray="5 4" name="Target" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-                <div>
-                  <h3 style={{ fontWeight: 700, fontSize: 14, marginBottom: 14 }}>Lead Sources</h3>
-                  <ResponsiveContainer width="100%" height={240}>
-                    <PieChart>
-                      <Pie data={leadSourceData} cx="50%" cy="45%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value">
-                        {leadSourceData.map((e, i) => <Cell key={i} fill={e.color} />)}
-                      </Pie>
-                      <Legend formatter={(v) => <span style={{ fontSize: 11 }}>{v}</span>} iconSize={8} iconType="circle" />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              <div data-mobile-grid="stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-                <div>
-                  <h3 style={{ fontWeight: 700, fontSize: 14, marginBottom: 14 }}>Product-wise Revenue</h3>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart data={productSalesData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis dataKey="product" tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
-                      <YAxis tickFormatter={(v) => `AED ${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                      <Tooltip formatter={(v: unknown) => formatCurrency(v as number)} contentStyle={{ borderRadius: 8, border: "none", fontSize: 12 }} />
-                      <Bar dataKey="revenue" fill="#2563eb" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-                <div>
-                  <h3 style={{ fontWeight: 700, fontSize: 14, marginBottom: 14 }}>Employee-wise Revenue</h3>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart data={employeeSalesData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis dataKey="name" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                      <YAxis tickFormatter={(v) => `AED ${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                      <Tooltip formatter={(v: unknown) => formatCurrency(v as number)} contentStyle={{ borderRadius: 8, border: "none", fontSize: 12 }} />
-                      <Bar dataKey="revenue" fill="#7c3aed" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Employee table */}
-              <div>
-                <h3 style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Sales Team Performance</h3>
-                <div className="table-container">
-                  <table data-mobile-cards="true">
-                    <thead>
-                      <tr>
-                        <th>Employee</th>
-                        <th>Role</th>
-                        <th>Leads Assigned</th>
-                        <th>Deals Closed</th>
-                        <th>Conversion Rate</th>
-                        <th>Revenue</th>
-                        <th>Rating</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {mockEmployees.filter((e) => e.performance.leadsAssigned > 0).map((e) => (
-                        <tr key={e.id}>
-                          <td data-label="Employee" style={{ fontWeight: 600 }}>{e.name}</td>
-                          <td data-label="Role" style={{ fontSize: 12, color: "#64748b" }}>{e.role}</td>
-                          <td data-label="Leads Assigned">{e.performance.leadsAssigned}</td>
-                          <td data-label="Deals Closed">{e.performance.dealsClosed}</td>
-                          <td data-label="Conversion Rate" style={{ fontWeight: 700, color: "#7c3aed" }}>
-                            {Math.round((e.performance.dealsClosed / e.performance.leadsAssigned) * 100)}%
-                          </td>
-                          <td data-label="Revenue" style={{ fontWeight: 700, color: "#059669" }}>{formatCurrency(e.performance.revenue)}</td>
-                          <td data-label="Rating">{"⭐".repeat(Math.floor(e.performance.rating))} {e.performance.rating}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* SERVICE TAB */}
-          {activeTab === "service" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-              <div data-mobile-grid="metrics" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
-                {[
-                  { label: "Total Tickets", value: mockServiceTickets.length, color: "#2563eb" },
-                  { label: "Resolved", value: resolvedTickets, color: "#059669" },
-                  { label: "Open", value: mockServiceTickets.filter((t) => !["Completed", "Closed"].includes(t.status)).length, color: "#f97316" },
-                  { label: "Avg Resolution", value: "2.4 days", color: "#7c3aed" },
-                ].map((s) => (
-                  <div key={s.label} style={{ background: "#f8fafc", borderRadius: 10, padding: 16, textAlign: "center" }}>
-                    <div style={{ fontSize: 24, fontWeight: 800, color: s.color }}>{s.value}</div>
-                    <div style={{ fontSize: 12, color: "#64748b" }}>{s.label}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div>
-                <h3 style={{ fontWeight: 700, fontSize: 14, marginBottom: 14 }}>Monthly Ticket Resolution Trend</h3>
-                <ResponsiveContainer width="100%" height={240}>
-                  <BarChart data={serviceData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="month" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={{ borderRadius: 8, border: "none", fontSize: 12 }} />
-                    <Bar dataKey="resolved" fill="#059669" name="Resolved" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="open" fill="#f97316" name="Open" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div>
-                <h3 style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Service Tickets Summary</h3>
-                <div className="table-container">
-                  <table data-mobile-cards="true">
-                    <thead>
-                      <tr>
-                        <th>Ticket</th>
-                        <th>Client</th>
-                        <th>Equipment</th>
-                        <th>Priority</th>
-                        <th>Status</th>
-                        <th>Engineer</th>
-                        <th>Created</th>
-                        <th>Resolved</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {mockServiceTickets.map((t) => (
-                        <tr key={t.id}>
-                          <td data-label="Ticket" style={{ fontFamily: "monospace", fontSize: 11 }}>{t.ticketNumber}</td>
-                          <td data-label="Client" style={{ fontWeight: 600, fontSize: 12 }}>{t.clientName}</td>
-                          <td data-label="Equipment" style={{ fontSize: 12 }}>{t.equipment}</td>
-                          <td data-label="Priority">
-                            <span style={{
-                              fontSize: 11, padding: "2px 8px", borderRadius: 4, fontWeight: 600,
-                              background: t.priority === "Critical" ? "#fee2e2" : t.priority === "High" ? "#fed7aa" : "#d1fae5",
-                              color: t.priority === "Critical" ? "#dc2626" : t.priority === "High" ? "#f97316" : "#059669",
-                            }}>{t.priority}</span>
-                          </td>
-                          <td data-label="Status" style={{ fontSize: 12 }}>{t.status}</td>
-                          <td data-label="Engineer" style={{ fontSize: 12 }}>{t.assignedEngineerName}</td>
-                          <td data-label="Created" style={{ fontSize: 11 }}>{t.createdAt}</td>
-                          <td data-label="Resolved" style={{ fontSize: 11 }}>{t.resolvedAt || "—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* MARKETING TAB */}
-          {activeTab === "marketing" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-              <div data-mobile-grid="stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-                <div>
-                  <h3 style={{ fontWeight: 700, fontSize: 14, marginBottom: 14 }}>Leads by Source</h3>
-                  <ResponsiveContainer width="100%" height={260}>
-                    <PieChart>
-                      <Pie data={leadSourceData} cx="50%" cy="45%" outerRadius={100} dataKey="value" label={({ name, value }) => `${name}: ${value}%`} labelLine={false}>
-                        {leadSourceData.map((e, i) => <Cell key={i} fill={e.color} />)}
-                      </Pie>
-                      <Tooltip contentStyle={{ borderRadius: 8, border: "none", fontSize: 12 }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div>
-                  <h3 style={{ fontWeight: 700, fontSize: 14, marginBottom: 14 }}>ROI by Channel</h3>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    {[
-                      { channel: "Meta Ads", spend: 62250, leads: 85, roi: 340 },
-                      { channel: "Google Ads", spend: 72900, leads: 85, roi: 280 },
-                      { channel: "Referral", spend: 0, leads: 32, roi: 9999 },
-                      { channel: "Exhibition", spend: 50000, leads: 12, roi: 120 },
-                    ].map((r) => (
-                      <div key={r.channel}>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
-                          <span style={{ fontWeight: 500 }}>{r.channel}</span>
-                          <span style={{ fontWeight: 700, color: "#059669" }}>
-                            {r.roi === 9999 ? "∞" : `${r.roi}%`} ROI
-                          </span>
-                        </div>
-                        <div style={{ display: "flex", gap: 16, fontSize: 11, color: "#94a3b8", marginBottom: 4 }}>
-                          <span>Spend: {r.spend > 0 ? formatCurrency(r.spend) : "AED 0"}</span>
-                          <span>Leads: {r.leads}</span>
-                        </div>
-                        <div className="progress-bar">
-                          <div className="progress-fill" style={{ width: `${Math.min(100, r.roi / 40)}%` }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* CUSTOMERS TAB */}
-          {activeTab === "customers" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-              <div data-mobile-grid="metrics" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
-                {[
-                  { label: "Total Clients", value: mockClients.length, color: "#2563eb" },
-                  { label: "Existing Customers", value: mockClients.filter((c) => c.status === "Existing Customer").length, color: "#059669" },
-                  { label: "Active Leads", value: mockClients.filter((c) => c.status === "Lead").length, color: "#d97706" },
-                  { label: "Avg Lifetime Value", value: formatCurrency(Math.round(mockClients.reduce((s, c) => s + c.totalRevenue, 0) / Math.max(1, mockClients.filter((c) => c.totalRevenue > 0).length))), color: "#7c3aed" },
-                ].map((s) => (
-                  <div key={s.label} style={{ background: "#f8fafc", borderRadius: 10, padding: 16, textAlign: "center" }}>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</div>
-                    <div style={{ fontSize: 12, color: "#64748b" }}>{s.label}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div>
-                <h3 style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Top Clients by Revenue</h3>
-                <div className="table-container">
-                  <table data-mobile-cards="true">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Client</th>
-                        <th>Type</th>
-                        <th>City</th>
-                        <th>Status</th>
-                        <th>Total Revenue</th>
-                        <th>Source</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[...mockClients].sort((a, b) => b.totalRevenue - a.totalRevenue).map((c, i) => (
-                        <tr key={c.id}>
-                          <td data-label="#" style={{ fontWeight: 700, color: "#94a3b8", fontSize: 13 }}>#{i + 1}</td>
-                          <td data-label="Client" style={{ fontWeight: 600 }}>{c.name}</td>
-                          <td data-label="Type" style={{ fontSize: 12, color: "#64748b" }}>{c.orgType}</td>
-                          <td data-label="City" style={{ fontSize: 12 }}>{c.city}</td>
-                          <td data-label="Status">
-                            <span style={{
-                              fontSize: 11, padding: "2px 8px", borderRadius: 4, fontWeight: 600,
-                              background: c.status === "Existing Customer" ? "#d1fae5" : c.status === "Prospect" ? "#ede9fe" : "#dbeafe",
-                              color: c.status === "Existing Customer" ? "#059669" : c.status === "Prospect" ? "#7c3aed" : "#2563eb",
-                            }}>{c.status}</span>
-                          </td>
-                          <td data-label="Total Revenue" style={{ fontWeight: 700, color: "#059669" }}>{formatCurrency(c.totalRevenue)}</td>
-                          <td data-label="Source" style={{ fontSize: 12, color: "#64748b" }}>{c.source}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [tickets, setTickets] = useState<ServiceTicket[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [period, setPeriod] = useState("all");
+  const [tab, setTab] = useState("sales");
+  const [updated, setUpdated] = useState("");
+  const refreshInFlight = useRef(false);
+  const refresh = async () => {
+    if (refreshInFlight.current) return;
+    refreshInFlight.current = true;
+    setLoading(true); setError("");
+    const read = async <T,>(url: string, field: string): Promise<T[]> => {
+      const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(12000) });
+      if (!response.ok) throw new Error("Report data refresh failed");
+      const result = await response.json();
+      const records = result[field] || result.data;
+      if (!Array.isArray(records)) throw new Error("Invalid report response");
+      return records;
+    };
+    try {
+      // Reports only reads records; no sync writes or task-generation events.
+      const results = await Promise.allSettled([
+        read<Invoice>("/api/invoices?sync=0", "invoices").then(setInvoices),
+        read<Lead>("/api/leads", "leads").then(setLeads),
+        read<ServiceTicket>("/api/services", "tickets").then(setTickets),
+      ]);
+      if (results.some(result => result.status === "rejected")) setError("Some records could not refresh. Cached data remains visible. Tap refresh to retry.");
+      else setUpdated(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+    } finally {
+      refreshInFlight.current = false;
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    setInvoices(getZohoLiveInvoices()); setLeads(getStoredLeads()); setTickets(getStoredServiceTickets());
+    void refresh();
+    const invoiceUpdate = () => setInvoices(getZohoLiveInvoices());
+    const leadUpdate = () => setLeads(getStoredLeads());
+    const serviceUpdate = () => setTickets(getStoredServiceTickets());
+    window.addEventListener("fastonmed_invoices_updated", invoiceUpdate);
+    window.addEventListener("fastonmed_leads_updated", leadUpdate);
+    window.addEventListener("fastonmed_services_updated", serviceUpdate);
+    return () => { window.removeEventListener("fastonmed_invoices_updated", invoiceUpdate); window.removeEventListener("fastonmed_leads_updated", leadUpdate); window.removeEventListener("fastonmed_services_updated", serviceUpdate); };
+  }, []);
+  const inPeriod = (date: string) => {
+    if (period === "all") return true;
+    const parsed = new Date(date); const today = new Date();
+    return parsed.getFullYear() === today.getFullYear() && (period === "year" || parsed.getMonth() === today.getMonth());
+  };
+  const valid = invoices.filter(invoice => !["draft", "void", "cancelled", "canceled"].includes(invoice.status.toLowerCase()) && inPeriod(invoice.createdAt));
+  const revenue = valid.reduce((sum, invoice) => sum + Number(invoice.amount || 0), 0);
+  const balance = (invoice: Invoice) => Math.min(Number(invoice.amount || 0), Math.max(0, Number(invoice.balanceDue ?? (invoice.status.toLowerCase() === "paid" ? 0 : invoice.amount))));
+  const outstanding = valid.reduce((sum, invoice) => sum + balance(invoice), 0);
+  const currentLeads = leads.filter(lead => inPeriod(lead.leadDate || lead.createdAt));
+  const openLeads = currentLeads.filter(lead => !["Won", "Lost"].includes(lead.stage));
+  const pipeline = openLeads.reduce((sum, lead) => sum + Number(lead.estimatedValue || 0), 0);
+  const months = Array.from({length: 6}, (_, index) => {
+    const date = new Date(); date.setDate(1); date.setMonth(date.getMonth() - 5 + index);
+    const key = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}`;
+    return { key, name: date.toLocaleDateString("en", { month: "short" }), value: valid.filter(invoice => invoice.createdAt?.startsWith(key)).reduce((sum, invoice) => sum + Number(invoice.amount || 0), 0) };
+  });
+  const max = Math.max(1, ...months.map(month => month.value));
+  const clients = new Map<string, {name: string; total: number; count: number}>();
+  for (const invoice of valid) { const key = invoice.clientId || invoice.clientName; const current = clients.get(key) || {name: invoice.clientName, total: 0, count: 0}; current.total += Number(invoice.amount || 0); current.count++; clients.set(key,current); }
+  const topClients = [...clients.values()].sort((a,b)=>b.total-a.total);
+  const exportCsv = () => {
+    const quote = (value: unknown) => { const text = String(value ?? ""); return `"${(/^[=+@\-\t\r]/.test(text) ? "'" : "") + text.replaceAll('"','""')}"`; };
+    const rows = [["Invoice", "Customer", "Invoice date", "Status", "Amount AED", "Outstanding AED"], ...valid.map(invoice => [invoice.invoiceNumber, invoice.clientName, invoice.createdAt, invoice.status, invoice.amount, balance(invoice)])];
+    const url = URL.createObjectURL(new Blob(["\uFEFF" + rows.map(row=>row.map(quote).join(",")).join("\r\n")], {type:"text/csv;charset=utf-8"}));
+    const link = document.createElement("a"); link.href=url; link.download="fastonmed-invoice-report.csv"; link.click(); URL.revokeObjectURL(url);
+  };
+  return <div className="reports-page">
+    <div className="reports-heading"><div><h1>Business overview</h1><p>Invoice, payment and operations reports</p></div><button onClick={()=>void refresh()} disabled={loading} aria-label="Refresh reports"><RefreshCw size={17} className={loading ? "animate-spin" : ""}/></button></div>
+    <div className="reports-controls"><label>Reporting period<select value={period} onChange={event=>setPeriod(event.target.value)}><option value="all">All time</option><option value="month">This month</option><option value="year">This year</option></select></label><span role="status">{loading ? "Updating records…" : updated ? `Updated ${updated}` : "Cached records"}</span></div>
+    {error && <p className="reports-notice" role="alert">{error}</p>}
+    <div className="reports-metrics">{[
+      {label:"Invoiced sales",value:revenue,Icon:CircleDollarSign,note:`${valid.length} issued invoices`},
+      {label:"Collected",value:revenue-outstanding,Icon:Wallet,note:"Invoice amount less balance"},
+      {label:"Outstanding",value:outstanding,Icon:Clock,note:"Balance on selected invoices"},
+      {label:"Open pipeline",value:pipeline,Icon:Target,note:`${openLeads.length} active opportunities`},
+    ].map(({label,value,Icon,note})=><div className="reports-metric" key={label}><div><span>{label}</span><Icon size={17}/></div><strong>{formatCurrency(value)}</strong><small>{note}</small></div>)}</div>
+    <p className="reports-source">Sales use the same Zoho invoice records as Invoice & Payment. Draft and void invoices are excluded. Amounts are shown as recorded in AED.</p>
+    <div className="reports-tabs" role="tablist" aria-label="Report section">{["sales","service","customers"].map(value=><button role="tab" aria-selected={tab===value} key={value} onClick={()=>setTab(value)}>{value}</button>)}</div>
+    {tab==="sales" && <><section className="report-panel"><div className="report-panel-heading"><h2>Monthly invoiced sales</h2><span>Last 6 months</span></div>{revenue===0 ? <p className="report-empty">{loading ? "Loading invoice records…" : "No issued invoices in this period."}</p> : <div className="report-bars" aria-label="Monthly invoiced sales">{months.map(month=><div className="report-bar-column" key={month.key}><span>{formatCurrency(month.value)}</span><div className="report-bar-track"><div style={{height:`${month.value/max*100}%`}}/></div><small>{month.name}</small></div>)}</div>}</section><div className="reports-exports"><button onClick={exportCsv}><Download size={15}/> Export invoices CSV</button><button onClick={()=>window.print()}><Printer size={15}/> Print / PDF</button></div><Link className="report-link" href="/sales">View invoices & payments <ArrowUpRight size={16}/></Link></>}
+    {tab==="customers" && <section className="report-panel"><h2>Customers by invoiced sales</h2>{!topClients.length && <p className="report-empty">No customers with issued invoices in this period.</p>}{topClients.slice(0,20).map((client,index)=><div className="report-list-row" key={index}><div><strong>{client.name}</strong><small>{client.count} invoices</small></div><b>{formatCurrency(client.total)}</b></div>)}</section>}
+    {tab==="service" && <section className="report-panel"><h2>Service performance</h2><p className="reports-source">Tickets created in the selected reporting period.</p>{["Open", "Completed"].map(status=><div className="report-list-row" key={status}><strong>{status} tickets</strong><b>{tickets.filter(ticket=>inPeriod(ticket.createdAt) && (status==="Completed" ? ["Completed","Closed","Resolved"].includes(ticket.status) : !["Completed","Closed","Resolved"].includes(ticket.status))).length}</b></div>)}<Link className="report-link" href="/services">Open service management <ArrowUpRight size={16}/></Link></section>}
+  </div>;
 }

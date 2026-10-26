@@ -1,4 +1,5 @@
 "use client";
+import "./catalog-refinement.css";
 import AddProductModal from "@/components/AddProductModal";
 import ProductDescription from "@/components/ProductDescription";
 import WooCommerceSync from "@/components/WooCommerceSync";

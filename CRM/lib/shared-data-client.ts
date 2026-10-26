@@ -34,13 +34,20 @@ export async function persistSharedDataset(
   return cleanDirectoryDataset(dataset, result.data);
 }
 
-export async function fetchSharedDataset(dataset: SharedBrowserDataset): Promise<unknown[]> {
-  const response = await fetch(`/api/shared-data/${dataset}`, { cache: "no-store" });
-  const result = await response.json().catch(() => null);
-  if (!response.ok || !result?.success || !Array.isArray(result.data)) {
-    throw new Error(result?.error || `Unable to load ${dataset}`);
-  }
-  return cleanDirectoryDataset(dataset, result.data);
+const sharedReads = new Map<SharedBrowserDataset, Promise<unknown[]>>();
+export function fetchSharedDataset(dataset: SharedBrowserDataset): Promise<unknown[]> {
+  const pending = sharedReads.get(dataset);
+  if (pending) return pending;
+  const request = (async () => {
+    const response = await fetch(`/api/shared-data/${dataset}`, { cache: "no-store" });
+    const result = await response.json().catch(() => null);
+    if (!response.ok || !result?.success || !Array.isArray(result.data)) {
+      throw new Error(result?.error || `Unable to load ${dataset}`);
+    }
+    return cleanDirectoryDataset(dataset, result.data);
+  })().finally(() => { sharedReads.delete(dataset); });
+  sharedReads.set(dataset, request);
+  return request;
 }
 
 export async function deleteSharedDatasetItem(
@@ -69,6 +76,7 @@ function sharedItemKey(item: unknown): string {
 export async function syncAllSharedBrowserData(): Promise<void> {
   if (typeof window === "undefined") return;
 
+  const changedStorageKeys = new Set<string>();
   const entries = Object.entries(SHARED_BROWSER_DATASETS);
   // Keep the initial migration in the background without exhausting the
   // database connection pool (the workspace also loads its own data).
@@ -96,6 +104,7 @@ export async function syncAllSharedBrowserData(): Promise<void> {
         const serialized = JSON.stringify(merged);
         if (localStorage.getItem(storageKey) !== serialized) {
           localStorage.setItem(storageKey, serialized);
+          changedStorageKeys.add(storageKey);
         }
       } catch (error) {
         console.warn(`Shared database sync failed for ${dataset}:`, error);
@@ -103,15 +112,16 @@ export async function syncAllSharedBrowserData(): Promise<void> {
     }));
   }
 
+  if (!changedStorageKeys.size) return;
   window.dispatchEvent(new Event("fastonmed_shared_data_synced"));
-  window.dispatchEvent(new Event("fastonmed_clients_updated"));
-  window.dispatchEvent(new Event("fastonmed_people_updated"));
-  window.dispatchEvent(new Event("fastonmed_companies_updated"));
-  window.dispatchEvent(new Event("fastonmed_departments_updated"));
-  window.dispatchEvent(new Event("fastonmed_categories_updated"));
-  window.dispatchEvent(new Event("fastonmed_brands_updated"));
-  window.dispatchEvent(new Event("fastonmed_products_updated"));
-  window.dispatchEvent(new Event("fastonmed_invoices_updated"));
-  window.dispatchEvent(new Event("fastonmed_engineers_updated"));
-  window.dispatchEvent(new Event("fastonmed_service_types_updated"));
+  const events: Record<string, string> = {
+    fastonmed_clients: "fastonmed_clients_updated", fastonmed_people: "fastonmed_people_updated",
+    fastonmed_companies: "fastonmed_companies_updated", fastonmed_departments: "fastonmed_departments_updated",
+    fastonmed_product_categories: "fastonmed_categories_updated", fastonmed_product_brands: "fastonmed_brands_updated",
+    fastonmed_products: "fastonmed_products_updated", fastonmed_zoho_live_invoices: "fastonmed_invoices_updated",
+    fastonmed_service_engineers_v1: "fastonmed_engineers_updated", fastonmed_service_types_v1: "fastonmed_service_types_updated",
+  };
+  for (const storageKey of changedStorageKeys) {
+    if (events[storageKey]) window.dispatchEvent(new Event(events[storageKey]));
+  }
 }

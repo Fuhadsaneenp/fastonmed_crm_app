@@ -55,9 +55,8 @@ export async function fetchZohoLiveQuotesFromServer(): Promise<Quotation[]> {
     const res = await fetch("/api/quotations");
     if (res.ok) {
       const data = await res.json();
-      if (data && data.success && Array.isArray(data.quotes) && data.quotes.length > 0) {
+      if (data && data.success && Array.isArray(data.quotes)) {
         localStorage.setItem("fastonmed_zoho_live_quotes", JSON.stringify(data.quotes));
-        window.dispatchEvent(new Event("fastonmed_quotes_updated"));
         return data.quotes;
       }
     }

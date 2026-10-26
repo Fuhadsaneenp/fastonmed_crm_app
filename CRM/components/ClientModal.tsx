@@ -492,7 +492,7 @@ export default function ClientModal({
   };
 
   return (
-    <div className="directory-editor-overlay" data-mobile-overlay="true"
+    <div className="directory-editor-overlay client-form-overlay" data-mobile-overlay="true"
       style={{
         position: "fixed",
         inset: 0,
@@ -507,7 +507,7 @@ export default function ClientModal({
       onClick={onClose}
     >
       <div
-        className="card directory-editor directory-organisation-editor"
+        className="card directory-editor directory-organisation-editor client-form-dialog"
         style={{
           width: "100%",
           maxWidth: 960,
@@ -524,7 +524,7 @@ export default function ClientModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Executive Modal Header */}
-        <div className="directory-editor-header"
+        <div className="directory-editor-header client-form-header"
           style={{
             padding: "18px 26px",
             borderBottom: "1px solid #f1f5f9",
@@ -602,7 +602,7 @@ export default function ClientModal({
         </div>
 
         {/* Modal Body: Balanced 2-Column Dashboard Cards */}
-        <div className="directory-editor-body" data-mobile-grid="stack"
+        <div className="directory-editor-body client-form-body" data-mobile-grid="stack"
           style={{
             padding: "22px 26px 26px 26px",
             overflowY: "auto",
@@ -1490,7 +1490,7 @@ export default function ClientModal({
         </div>
 
         {/* Modal Action Footer */}
-        <div className="directory-editor-footer"
+        <div className="directory-editor-footer client-form-footer"
           style={{
             padding: "14px 26px",
             borderTop: "1px solid #f1f5f9",

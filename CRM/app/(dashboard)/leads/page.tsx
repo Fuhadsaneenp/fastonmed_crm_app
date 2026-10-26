@@ -1,5 +1,8 @@
 "use client";
+import LeadReceivedDate from "@/components/LeadReceivedDate";
+import { apiRequest } from "@/lib/api-client";
 import "./lead-form.css";
+import "./lead-activity.css";
 import { useState, useEffect, useMemo } from "react";
 import { mockEmployees, mockClients, mockProducts } from "@/lib/mock-data";
 import {
@@ -103,7 +106,7 @@ const DEFAULT_FACILITY_TYPES = [
 
 function getLeadDateStatus(lead: Lead) {
   // Use lead created date as explicitly requested: "date should show when the lead is created not next follow up date"
-  const dateStr = (lead.createdAt || lead.updatedAt || lead.nextFollowUp || "2026-09-18").slice(0, 10);
+  const dateStr = (lead.leadDate || lead.createdAt || lead.updatedAt || lead.nextFollowUp || "2026-09-18").slice(0, 10);
   try {
     const parts = dateStr.split("-");
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -363,11 +366,21 @@ export default function LeadsPage() {
   // Modal Dropdown controlled states
   const [leadSource, setLeadSource] = useState<LeadSource>("Direct Enquiry");
   const [leadReferredBy, setLeadReferredBy] = useState<string>("");
+  const referrerOptions = useMemo(() => {
+    const names = new Map<string, string>();
+    for (const name of [...leads.map((lead) => lead.referredBy || ""), leadReferredBy]) {
+      const trimmed = name.trim();
+      if (trimmed && !names.has(trimmed.toLocaleLowerCase())) names.set(trimmed.toLocaleLowerCase(), trimmed);
+    }
+    return Array.from(names.values()).sort((a, b) => a.localeCompare(b));
+  }, [leads, leadReferredBy]);
+
   const [leadStage, setLeadStage] = useState<PipelineStage>("New Lead");
   const [leadPriority, setLeadPriority] = useState<"Low" | "Medium" | "High" | "Critical">("Medium");
   const [leadAssignedTo, setLeadAssignedTo] = useState<string>("Riyas");
   const [editingLeadId, setEditingLeadId] = useState<string | null>(null);
   const [leadNotes, setLeadNotes] = useState<string>("");
+  const [leadDate, setLeadDate] = useState(() => new Date().toLocaleDateString("en-CA"));
   const [leadFollowUp, setLeadFollowUp] = useState<string>("");
   const [activeActionLeadId, setActiveActionLeadId] = useState<string | null>(null);
 
@@ -401,37 +414,27 @@ export default function LeadsPage() {
     }));
   });
 
+  const [teamLoadError, setTeamLoadError] = useState(false);
   useEffect(() => {
-    let isMounted = true;
-    fetch("/api/ems/employees")
-      .then((res) => res.json())
-      .then((res) => {
-        if (isMounted && res?.success && Array.isArray(res.data) && res.data.length > 0) {
-          setEmployeeList((prev) => {
-            const map = new Map<string, { id: string; name: string; role?: string; department?: string }>();
-            prev.forEach((e) => map.set(e.name.toLowerCase().trim(), e));
-            res.data.forEach((emp: any) => {
-              const name = (emp.fullName || `${emp.firstName || ""} ${emp.lastName || ""}`).trim();
-              if (name && emp.status !== "TERMINATED") {
-                const key = name.toLowerCase().trim();
-                if (!map.has(key)) {
-                  map.set(key, {
-                    id: emp.id,
-                    name: name,
-                    role: emp.designationTitle || "Team Member",
-                    department: emp.departmentName || "General",
-                  });
-                }
-              }
-            });
-            return Array.from(map.values());
-          });
+    let active = true;
+    const loadTeam = async () => {
+      try {
+        const employees = await apiRequest<{ id: string; name: string; role?: string; department?: string; status?: string }[]>("/api/employees");
+        if (!active) return;
+        const members = new Map<string, typeof employees[number]>();
+        for (const employee of employees) {
+          const name = employee.name?.trim();
+          if (name && employee.id && employee.status?.toUpperCase() !== "TERMINATED") {
+            members.set(name.toLowerCase(), { ...employee, name });
+          }
         }
-      })
-      .catch(() => {});
-    return () => {
-      isMounted = false;
+        setEmployeeList([...members.values()]);
+        setTeamLoadError(false);
+      } catch { if (active) setTeamLoadError(true); }
     };
+    void loadTeam();
+    window.addEventListener("focus", loadTeam);
+    return () => { active = false; window.removeEventListener("focus", loadTeam); };
   }, []);
 
   // Quotation Products selection state (Multiple items with individual prices)
@@ -754,7 +757,7 @@ export default function LeadsPage() {
 
     const loadProducts = async () => {
       try {
-        const prods = await getCatalogProducts().catch(() => getStoredProducts());
+        const prods = await getCatalogProducts({ onCached: setAvailableProducts }).catch(() => getStoredProducts());
         if (prods && prods.length > 0) {
           setAvailableProducts(prods);
         } else {
@@ -765,9 +768,6 @@ export default function LeadsPage() {
       }
     };
     void loadProducts();
-    void fetchStoredProductsFromServer().then((fresh) => {
-      if (fresh && fresh.length > 0) setAvailableProducts(fresh);
-    });
 
     const handleSyncLeads = () => {
       const syncd = getStoredLeads().filter((l) => !isDummyLead(l));
@@ -800,10 +800,10 @@ export default function LeadsPage() {
     };
     loadCurrentUser();
 
-    // Auto-polling every 8 seconds to synchronize changes across all active accounts
+    // Keep other accounts up to date without polling hidden tabs.
     const pollInterval = setInterval(() => {
-      void syncLeadsFromServer();
-    }, 8000);
+      if (document.visibilityState === "visible") void syncLeadsFromServer();
+    }, 30000);
 
     const handleWindowFocus = () => {
       void syncLeadsFromServer();
@@ -843,6 +843,7 @@ export default function LeadsPage() {
     const defaultRep = employeeList.find((e) => e.name === "Riyas")?.name || employeeList[0]?.name || "Riyas";
     setLeadAssignedTo(defaultRep);
     setLeadNotes("");
+    setLeadDate(new Date().toLocaleDateString("en-CA"));
     setLeadFollowUp(new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0]);
 
     // Initialize Category and connected Product
@@ -931,6 +932,7 @@ export default function LeadsPage() {
     setLeadAssignedTo(lead.assignedTo || "Riyas");
 
     // 4. Notes & Follow-up
+    setLeadDate((lead.leadDate || lead.createdAt || new Date().toLocaleDateString("en-CA")).slice(0, 10));
     setLeadNotes(lead.notes || "");
     setLeadFollowUp(lead.nextFollowUp || new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0]);
 
@@ -1166,7 +1168,7 @@ export default function LeadsPage() {
       (l.assignedTo && l.assignedTo.toLowerCase().includes(q)) ||
       (l.createdBy && l.createdBy.toLowerCase().includes(q));
 
-    const leadCreatedDate = (l.createdAt || l.updatedAt || l.nextFollowUp || "").slice(0, 10);
+    const leadCreatedDate = (l.leadDate || l.createdAt || l.updatedAt || l.nextFollowUp || "").slice(0, 10);
     let matchDate = true;
     if (dateFilterRange === "week") {
       matchDate = isSameWeek(leadCreatedDate);
@@ -1240,9 +1242,18 @@ export default function LeadsPage() {
   // Modern confirmation modal state for deleting leads
   const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
 
+  const [invoicePromptLead, setInvoicePromptLead] = useState<Lead | null>(null);
+  const [invoiceReference, setInvoiceReference] = useState("");
+
   const moveStage = (leadId: string, newStage: PipelineStage) => {
     const targetLead = leads.find((l) => l.id === leadId);
     if (!targetLead) return;
+
+    if (newStage === "Approved") {
+      setInvoicePromptLead(targetLead);
+      setInvoiceReference(targetLead.invoiceReference || "");
+      return;
+    }
 
     if (newStage === "Quotation Forwarded") {
       setQuotePromptLead(targetLead);
@@ -1280,14 +1291,16 @@ export default function LeadsPage() {
     newStage: PipelineStage,
     quoteNumber?: string,
     quoteAmount?: number,
-    quotedProductsList?: Array<{ product: string; price: number }>
+    quotedProductsList?: Array<{ product: string; price: number }>,
+    invoiceRef?: string
   ) => {
     const updated = leads.map((l) => {
       if (l.id !== leadId) return l;
       const updatedLead: Lead = {
         ...l,
         stage: newStage,
-        updatedAt: new Date().toISOString().split("T")[0],
+        ...(invoiceRef !== undefined ? { invoiceReference: invoiceRef.trim() } : {}),
+        updatedAt: new Date().toISOString(),
         ...(quoteNumber ? { quotationNumber: quoteNumber } : {}),
         ...(quoteAmount !== undefined ? { quotationValue: quoteAmount, estimatedValue: quoteAmount } : {}),
         ...(quotedProductsList && quotedProductsList.length > 0
@@ -1298,6 +1311,9 @@ export default function LeadsPage() {
           : {}),
       };
 
+      if (invoiceRef?.trim()) {
+        updatedLead.comments = [{ id: `comm-invoice-${Date.now()}`, author: "System (Invoice)", text: `Invoice reference recorded: ${invoiceRef.trim()}. Lead stage updated to Approved.`, createdAt: new Date().toISOString() }, ...(updatedLead.comments || [])];
+      }
       if (quoteNumber) {
         const quoteComment: LeadComment = {
           id: `comm-quote-${Date.now()}`,
@@ -1348,7 +1364,7 @@ export default function LeadsPage() {
     const updatedLead: Lead = {
       ...selectedLead,
       comments: [newComment, ...(selectedLead.comments || [])],
-      updatedAt: new Date().toISOString().split("T")[0],
+      updatedAt: new Date().toISOString(),
     };
 
     const updatedLeads = leads.map((l) => (l.id === leadId ? updatedLead : l));
@@ -1892,6 +1908,7 @@ export default function LeadsPage() {
                             <h3>{lead.clientName}</h3>
                             {(lead.priority === "High" || lead.priority === "Critical") && <span className="pipeline-summary-priority">{lead.priority === "Critical" ? "Urgent" : "High"}</span>}
                           </div>
+                          <LeadReceivedDate lead={lead} />{lead.invoiceReference && <div style={{ fontSize: 12, color: "#187e65", margin: "6px 0" }}>Invoice: {lead.invoiceReference}</div>}
                           <div className="pipeline-summary-request"><span>Customer request</span><p className="pipeline-summary-requirement">{lead.product || "No requirement added yet"}</p></div>
                           {lead.contactName && lead.contactName.trim().toLowerCase() !== lead.clientName.trim().toLowerCase() && <p className="pipeline-summary-contact">Contact person: {lead.contactName}</p>}
                           <div className="pipeline-summary-value"><span>Estimated amount</span><strong>{lead.estimatedValue > 0 ? formatCurrency(lead.estimatedValue) : "Not added"}</strong></div>
@@ -1927,6 +1944,7 @@ export default function LeadsPage() {
                             >
                               {lead.clientName}
                             </span>
+                            <LeadReceivedDate lead={lead} />{lead.invoiceReference && <div style={{ fontSize: 12, color: "#187e65", margin: "6px 0" }}>Invoice: {lead.invoiceReference}</div>}
                           </div>
 
                           {/* Priority Pill & Quick Edit */}
@@ -2264,7 +2282,7 @@ export default function LeadsPage() {
                 backgroundColor: "#ffffff",
               }}
             >
-              <div style={{ minWidth: 0, flex: 1, paddingRight: 16 }}>
+              <div className="lead-header-summary" style={{ minWidth: 0, flex: 1, paddingRight: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
                   <div
                     style={{
@@ -2283,9 +2301,9 @@ export default function LeadsPage() {
                     <Building2 size={16} />
                   </div>
                   <h2 style={{ fontSize: 17, fontWeight: 700, color: "#0f172a", margin: 0, letterSpacing: "-0.01em" }}>
-                    <span className="lead-detail-title">Lead details</span><span className="lead-detail-organisation">{selectedLead.clientName}</span>
+                    <span className="lead-detail-title">Lead details</span><span className="lead-detail-organisation">{selectedLead.clientName}</span><LeadReceivedDate lead={selectedLead} />
                   </h2>
-                  <span
+                  <span className="lead-header-stage"
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
@@ -2313,7 +2331,7 @@ export default function LeadsPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "#64748b", flexWrap: "wrap" }}>
                   <span className="lead-header-request" style={{ fontWeight: 500, color: "#334155" }}>{selectedLead.product}</span>
                   <span>•</span>
-                  <span style={{ fontWeight: 700, color: "#059669" }}>
+                  <span className="lead-header-value" style={{ fontWeight: 700, color: "#059669" }}>
                     {selectedLead.estimatedValue > 0 ? formatCurrency(selectedLead.estimatedValue) : "Amount not added"}
                   </span>
                   {selectedLead.quantity > 1 && (
@@ -2460,6 +2478,8 @@ export default function LeadsPage() {
                     </span>
                   </div>
 
+                  <LeadReceivedDate lead={selectedLead} />
+                  {selectedLead.stage === "Approved" && <div style={{ marginBottom: 16, padding: 12, borderRadius: 10, background: "#edf7f2", color: "#21654f", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}><span>Invoice reference: <strong>{selectedLead.invoiceReference || "Not added"}</strong></span><button type="button" className="btn btn-secondary" onClick={() => {setInvoicePromptLead(selectedLead);setInvoiceReference(selectedLead.invoiceReference || "");}}> {selectedLead.invoiceReference ? "Edit" : "Add reference"}</button></div>}
                   {/* Primary Stakeholder */}
                   <div
                     style={{
@@ -2914,7 +2934,7 @@ export default function LeadsPage() {
               </div>
 
               {/* Responsible Team & Follow-up Full-Width Banner */}
-              <div data-mobile-grid="stack"
+              <div id="lead-ownership-summary" className="lead-ownership-summary"
                 style={{
                   backgroundColor: "#f8fafc",
                   borderRadius: 10,
@@ -2946,7 +2966,7 @@ export default function LeadsPage() {
                     {selectedLead.assignedTo ? selectedLead.assignedTo.slice(0, 2).toUpperCase() : "U"}
                   </div>
                   <div>
-                    <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 500 }}>Handling (Assignee)</div>
+                    <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 500 }}>Assigned to</div>
                     <div style={{ fontSize: 12.5, fontWeight: 600, color: "#1e293b" }}>
                       {selectedLead.assignedTo || "Unassigned"}
                     </div>
@@ -3030,16 +3050,17 @@ export default function LeadsPage() {
               )}
 
               {/* Comments & Activity Log */}
-              <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 14 }}>
+              <div className="lead-activity-section" style={{ borderTop: "1px solid #f1f5f9", paddingTop: 14 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#004d66", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  Conversation & Activity Notes ({selectedLead.comments?.length || 0})
+                  Activity & notes ({selectedLead.comments?.length || 0})
                 </div>
 
                 {/* Comment Input */}
-                <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+                <div className="lead-note-composer" style={{ display: "flex", gap: 10, marginBottom: 12 }}>
                   <textarea
                     className="form-input"
-                    placeholder="Write a comment or follow-up note (e.g. Spoke with Biomedical Lead, demo scheduled)..."
+                    aria-label="Add an activity note"
+                    placeholder="Add a note…"
                     value={newCommentText}
                     onChange={(e) => setNewCommentText(e.target.value)}
                     rows={2}
@@ -3068,12 +3089,12 @@ export default function LeadsPage() {
                       borderRadius: 8,
                     }}
                   >
-                    Add Note
+                    Add note
                   </button>
                 </div>
 
                 {/* Comments List */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 180, overflowY: "auto" }}>
+                <div className={`lead-activity-timeline ${(selectedLead.comments?.length || 0) === 0 ? "is-empty" : ""}`} style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 180, overflowY: "auto" }}>
                   {selectedLead.comments && selectedLead.comments.length > 0 ? (
                     selectedLead.comments.map((comment) => (
                       <div
@@ -3103,7 +3124,7 @@ export default function LeadsPage() {
                     ))
                   ) : (
                     <div style={{ fontSize: 12, color: "#94a3b8", fontStyle: "italic", padding: "10px 0", textAlign: "center" }}>
-                      No activity notes yet. Write an update above to keep a record of conversations and next steps.
+                      No notes yet. Add the first update above.
                     </div>
                   )}
                 </div>
@@ -3188,6 +3209,21 @@ export default function LeadsPage() {
       )}
 
       {/* ================= COLLECT QUOTATION NUMBER POPUP ================= */}
+      {invoicePromptLead && (
+        <div role="presentation" style={{ position: "fixed", inset: 0, zIndex: 10000, background: "#0f172a70", display: "grid", placeItems: "center", padding: 20 }}>
+          <form role="dialog" aria-modal="true" aria-labelledby="invoice-reference-title" onSubmit={(event) => { event.preventDefault(); applyStageChange(invoicePromptLead.id, "Approved", undefined, undefined, undefined, invoiceReference); setInvoicePromptLead(null); }} style={{ width: "100%", maxWidth: 460, background: "white", borderRadius: 18, padding: 24, boxShadow: "0 20px 60px #0003" }}>
+            <h2 id="invoice-reference-title" style={{ margin: "0 0 8px", fontSize: 20 }}>Approve lead</h2>
+            <p style={{ color: "#64748b", margin: "0 0 20px" }}>{invoicePromptLead.clientName}</p>
+            <label htmlFor="approval-invoice-reference" style={{ display: "block", fontWeight: 600, marginBottom: 8 }}>Invoice reference number (optional)</label>
+            <input id="approval-invoice-reference" className="form-input" value={invoiceReference} onChange={(event) => setInvoiceReference(event.target.value)} placeholder="Enter invoice reference number" style={{ width: "100%", minHeight: 44 }} />
+            <p style={{ color: "#64748b", fontSize: 12 }}>Add the reference now, or approve without one and add it later.</p>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 24 }}>
+              <button type="button" className="btn btn-secondary" onClick={() => setInvoicePromptLead(null)}>Cancel</button>
+              <button type="submit" className="btn btn-primary">Confirm approval</button>
+            </div>
+          </form>
+        </div>
+      )}
       {showQuotePopup && quotePromptLead && (
         <div data-mobile-overlay="true"
           style={{
@@ -3998,6 +4034,11 @@ export default function LeadsPage() {
                   return;
                 }
 
+                if (leadSource === "Referral" && !leadReferredBy.trim()) {
+                  toast.error("Select or add the referring person");
+                  return;
+                }
+
                 const finalEstimatedValue =
                   typeof leadEstimatedValue === "number" && !isNaN(leadEstimatedValue)
                     ? leadEstimatedValue
@@ -4063,6 +4104,7 @@ export default function LeadsPage() {
                   const existingLead = leads.find((l) => l.id === editingLeadId);
                   const updatedLeadObj: Lead = {
                     ...existingLead!,
+                    leadDate,
                     clientId: existingLead?.clientId || syncedClient.id,
                     clientName: syncedClient.name,
                     contactName: resolvedContactName,
@@ -4107,6 +4149,7 @@ export default function LeadsPage() {
 
                 const newLeadObj: Lead = {
                   id: `lead-${Date.now()}`,
+                  leadDate,
                   clientId: syncedClient.id,
                   clientName: syncedClient.name,
                   contactName: resolvedContactName,
@@ -4306,7 +4349,7 @@ export default function LeadsPage() {
                                 ...clientRegistry.map((c) => ({
                                   value: `org-${c.id}`,
                                   label: c.name,
-                                  subtext: `🏢 ${c.orgType} • ${c.state || c.city || "UAE"}`,
+                                  subtext: `${c.orgType} • ${c.state || c.city || "UAE"}`,
                                 })),
                               ]
                             : []),
@@ -4741,17 +4784,24 @@ export default function LeadsPage() {
                           <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#1e293b", marginBottom: 5 }}>
                             Referred By (Person Name / Contact) <span style={{ color: "#ef4444" }}>*</span>
                           </label>
-                          <input
-                            type="text"
-                            name="referredBy"
-                            className="form-input"
-                            placeholder="e.g. Dr. Mansoor, Eng. Ahmed, Care Medical"
+                          <input type="hidden" name="referredBy" value={leadReferredBy} />
+                          <CustomLightSelect
                             value={leadReferredBy}
-                            onChange={(e) => setLeadReferredBy(e.target.value)}
-                            required
-                            autoFocus
-                            style={{ fontSize: 13, height: 38, borderRadius: 8 }}
+                            options={referrerOptions}
+                            onChange={setLeadReferredBy}
+                            searchable
+                            placeholder="Search or add a referring person"
+                            sheetTitle="Referred by"
+                            onAddNew={(name) => {
+                              if (name?.trim()) setLeadReferredBy(name.trim());
+                              else toast.error("Type the referring person's name in the search box first");
+                            }}
+                            addNewLabel="Add referring person"
+                            buttonStyle={{ minHeight: 44, fontSize: 13, width: "100%", borderRadius: 8 }}
                           />
+                          <p style={{ margin: "6px 0 0", fontSize: 12, color: "#64748b" }}>
+                            Search previous referrers, or type a new name and choose Add. New names become reusable after saving the lead.
+                          </p>
                         </div>
                       )}
                     </div>
@@ -5165,7 +5215,7 @@ export default function LeadsPage() {
                         <CustomLightSelect
                           value={leadAssignedTo}
                           onChange={(val) => setLeadAssignedTo(val)}
-                          options={employeeList.map((e) => ({
+                          options={(leadAssignedTo && !employeeList.some(e => e.name === leadAssignedTo) ? [...employeeList, { id: "existing-assignee", name: leadAssignedTo }] : employeeList).map((e) => ({
                             value: e.name,
                             label: e.name,
                             subtext: e.department && e.role ? `${e.department} • ${e.role}` : (e.department || e.role),
@@ -5193,6 +5243,15 @@ export default function LeadsPage() {
                     </div>
                   </div>
                 </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+                  <div>
+                    <label htmlFor="lead-date" style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#1e293b", marginBottom: 5 }}>Lead Date *</label>
+                    <input id="lead-date" name="leadDate" type="date" required value={leadDate} onChange={(event) => setLeadDate(event.target.value)} className="form-input" style={{ fontSize: 13, height: 38, borderRadius: 8 }} />
+                    <p style={{ margin: "5px 0 0", fontSize: 12, color: "#64748b" }}>Date the enquiry was received. You can enter an earlier date.</p>
+                  </div>
+                </div>
+                {teamLoadError && <p role="status" style={{ fontSize: 12, color: "#b45309" }}>Could not refresh the team directory. Return to this tab to retry.</p>}
 
                 {/* Full-width Notes / Requirements section */}
                 <div style={{ paddingTop: 4, borderTop: "1px solid #f1f5f9" }}>

@@ -1,4 +1,5 @@
 "use client";
+import "./day-page-mobile.css";
 
 import React, { useState, useEffect } from "react";
 import type { Task, TaskStatus, Client } from "@/types";
@@ -299,7 +300,7 @@ export default function DayDetailPopup({
             </div>
           ) : (
             tasks.map((task) => {
-              const normStatus = task.status === "Completed" ? "Approved" : task.status;
+              const normStatus = task.status === "Approved" ? "Completed" : task.status;
               const cfg = STATUS_SELECT_CONFIG[normStatus] || STATUS_SELECT_CONFIG["Pending"];
               const isUrgent = task.priority === "High";
               const canEdit = canUserEditTask(task, currentUser);
@@ -307,6 +308,7 @@ export default function DayDetailPopup({
               return (
                 <div
                   key={task.id}
+                  className="day-task-card"
                   onClick={(e) => {
                     e.stopPropagation();
                     const target = e.target as HTMLElement;

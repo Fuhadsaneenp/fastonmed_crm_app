@@ -1,4 +1,5 @@
 "use client";
+import "./settings-mobile.css";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -56,7 +57,7 @@ export default function SettingsLayout({
   };
 
   return (
-    <div
+    <div className="settings-shell"
       style={{
         minHeight: "100vh",
         backgroundColor: "#f8fafc",
@@ -67,7 +68,7 @@ export default function SettingsLayout({
     >
       <GlobalImpersonationBar />
       {/* ================= SETTINGS TOP HEADER BAR ================= */}
-      <header className="mobile-workspace-header"
+      <header className="mobile-workspace-header settings-header"
         style={{
           height: 64,
           backgroundColor: "#002735",
@@ -83,7 +84,7 @@ export default function SettingsLayout({
         }}
       >
         {/* Left: Back Button + Brand Logo + Platform Badge */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div className="settings-header-leading" style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <button
             type="button"
             onClick={() => {
@@ -117,6 +118,7 @@ export default function SettingsLayout({
               e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)";
               e.currentTarget.style.color = "#e2e8f0";
             }}
+            aria-label="Go back"
             title="Go Back"
           >
             <ArrowLeft size={15} />
@@ -132,7 +134,8 @@ export default function SettingsLayout({
           >
             <FastonmedLogo theme="dark" size="md" />
           </Link>
-          <div
+          <span className="settings-mobile-title">Settings</span>
+          <div className="settings-platform-badge"
             style={{
               padding: "3px 9px",
               backgroundColor: "rgba(66,182,156,0.18)",
@@ -146,13 +149,13 @@ export default function SettingsLayout({
           >
             SYSTEM SETTINGS
           </div>
-          <span style={{ fontSize: 13, color: "#94a3b8" }}>
+          <span className="settings-header-description" style={{ fontSize: 13, color: "#94a3b8" }}>
             Company Profile & Universal Integrations
           </span>
         </div>
 
         {/* Right: Hub Link + User Menu */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div className="settings-header-actions" style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <Link
             href="/hub"
             style={{
@@ -175,6 +178,8 @@ export default function SettingsLayout({
           {/* User Profile */}
           <div style={{ position: "relative" }}>
             <button
+              aria-label="Account menu"
+              aria-expanded={showProfileMenu}
               onClick={() => setShowProfileMenu(!showProfileMenu)}
               style={{
                 display: "flex",

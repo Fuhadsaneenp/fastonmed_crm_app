@@ -1,0 +1,33 @@
+@media(max-width:767px){
+body:has(.crm-app-shell) .task-day-overlay[data-mobile-overlay=true]{inset:var(--app-header-space,58px) 0 var(--app-footer-space,67px)!important;height:auto!important;padding:0!important;align-items:stretch!important;background:#f3f6f4!important;backdrop-filter:none!important}
+.task-day-overlay>.task-day-dialog[role=dialog]{height:100%!important;max-height:100%!important;width:100%!important;max-width:none!important;min-height:0;border:0!important;border-radius:0!important;box-shadow:none!important;display:flex!important;flex-direction:column!important;background:#f3f6f4!important}
+.task-day-dialog>div:first-child{padding:16px!important;background:white!important;border-bottom:1px solid #e3ebe5!important;flex-shrink:0;gap:12px!important}
+.task-day-dialog>div:first-child>div:first-child{gap:12px!important;min-width:0}
+.task-day-dialog>div:first-child>div:first-child>div:first-child{width:44px!important;height:50px!important;min-width:44px;border-radius:12px!important;box-shadow:none!important;background:#eaf5ee!important;color:#197959!important;border:0!important}
+.task-day-dialog>div:first-child h2{font-size:18px!important;line-height:1.3;color:#224e3a!important;font-weight:650!important}
+.task-day-dialog>div:first-child>div:first-child>div:last-child>div>span{background:#f2f7f3!important;color:#7b9282!important;border:0!important;font-size:10px!important}
+.task-day-dialog>div:first-child p{color:#84988b!important;font-size:11px!important;margin-top:5px!important}
+.task-day-dialog>div:first-child>button{height:36px!important;width:36px!important;min-height:36px!important;min-width:36px!important;background:#f2f6f3!important;border-radius:10px!important;color:#557862!important}
+.task-day-dialog>.task-day-status{padding:12px 16px!important;gap:10px!important;background:white!important;font-size:10px!important;display:flex!important;flex-wrap:wrap;flex-shrink:0}
+.task-day-dialog>div:nth-child(3){padding:16px!important;flex:1;min-height:0;max-height:none!important;overflow-y:auto!important;background:#f3f6f4!important;gap:12px!important}
+.task-day-dialog>div:nth-child(3)>div{border-radius:14px!important;padding:14px!important;border:1px solid #dfe8e2!important;border-left:3px solid #69b08c!important;box-shadow:none!important;background:white!important}
+.task-day-dialog>div:nth-child(3) h3{font-size:14px!important;font-weight:650!important;line-height:1.5!important}
+.task-day-dialog>div:nth-child(3) select{min-height:38px!important;padding:6px 10px!important;font-size:12px!important;border-radius:9px!important}
+.task-day-dialog>div:nth-child(3) button{min-height:38px!important;font-size:11px!important;border-radius:9px!important}
+.task-day-dialog>div:last-child{flex-shrink:0;background:white!important;padding:12px 16px!important;border-top:1px solid #e2eae4!important}
+.task-day-dialog>div:last-child>button{min-height:44px!important;padding:10px!important;border-radius:11px!important;font-size:13px!important;background:#167e62!important;box-shadow:none!important}
+}
+
+@media(max-width:767px){
+.task-day-dialog .day-task-card{padding:14px!important;border:1px solid #dfe8e2!important;border-radius:14px!important;background:white!important;gap:10px!important;box-shadow:none!important}
+.day-task-card>div:first-child{align-items:flex-start!important;gap:10px!important}
+.day-task-card>div:first-child>div:first-child{font-size:14px!important;font-weight:650!important;line-height:1.5!important;color:#274b39!important}
+.day-task-card>div:nth-child(2){font-size:11px!important;line-height:1.6!important;gap:5px!important;color:#829487!important}
+.day-task-card>div:nth-child(2)>span{font-size:11px!important;color:#789080!important;font-weight:400!important}
+.day-task-card>div:nth-child(2)>span:first-child{color:#476b56!important;font-weight:500!important}
+.day-task-card>div:last-child{gap:8px!important;flex-wrap:wrap;border-top:1px solid #edf2ef!important;padding-top:10px!important}
+.day-task-card>div:last-child>div:first-child{font-size:11px!important;color:#68816f!important}
+.day-task-card>div:last-child>div:first-child>div{background:#e8f3ec!important;color:#247457!important;border-radius:8px!important}
+.day-task-card select{background:#f1f7f3!important;border:1px solid #dce8df!important;color:#32694c!important;font-weight:500!important;font-size:11px!important;min-height:36px!important}
+.day-task-card button{min-height:36px!important;font-size:11px!important;padding:6px 10px!important}
+}

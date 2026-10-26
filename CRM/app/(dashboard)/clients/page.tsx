@@ -416,31 +416,29 @@ function ClientsContent() {
   const [clientLoadError, setClientLoadError] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
+    const cached = getStoredClients();
+    setClients(cached);
+    setPeople(cached.flatMap(client => client.contacts));
     const loadLiveClients = async () => {
       setIsLoadingClients(true);
       setClientLoadError(null);
       try {
-        const [liveClients, liveInvoices, liveTimelineEvents] = await Promise.all([
-          syncLiveClientsFromApi(),
-          apiRequest<Invoice[]>("/api/invoices").catch(() => []),
-          apiRequest<ClientTimelineEvent[]>("/api/timeline-events").catch(() => []),
-        ]);
+        const liveClients = await syncLiveClientsFromApi();
+        if (!active) return;
         setClients(liveClients);
-        setPeople(liveClients.flatMap((client) => client.contacts));
-        setInvoices(liveInvoices);
-        setTimelineEvents(liveTimelineEvents);
+        setPeople(liveClients.flatMap(client => client.contacts));
       } catch (error) {
-        console.warn("API unavailable, loading cached real healthcare directory:", error);
-        setClientLoadError("Could not load the live FastonMed database. Showing cached real records only.");
-        const stored = getStoredClients();
-        setClients(stored);
-        setPeople(stored.flatMap((client) => client.contacts));
+        console.warn("Unable to refresh organisation directory:", error);
+        if (active) setClientLoadError("Could not refresh organisations. Showing saved records.");
       } finally {
-        setIsLoadingClients(false);
+        if (active) setIsLoadingClients(false);
       }
     };
-
     void loadLiveClients();
+    // Related history must never hold up the organisation list.
+    void apiRequest<Invoice[]>("/api/invoices").then(data => { if (active) setInvoices(data); }).catch(() => {});
+    void apiRequest<ClientTimelineEvent[]>("/api/timeline-events").then(data => { if (active) setTimelineEvents(data); }).catch(() => {});
     // Store update events are emitted by the live load itself. Refresh the view
     // from the cache here; starting another network load causes a request loop.
     const handleSync = () => {
@@ -452,6 +450,7 @@ function ClientsContent() {
     window.addEventListener("fastonmed_companies_updated", handleSync);
     window.addEventListener("fastonmed_contracts_updated", handleSync);
     return () => {
+      active = false;
       window.removeEventListener("fastonmed_clients_updated", handleSync);
       window.removeEventListener("fastonmed_companies_updated", handleSync);
       window.removeEventListener("fastonmed_contracts_updated", handleSync);
@@ -636,13 +635,16 @@ function ClientsContent() {
     const isUserRecord = c.entityType === "Individual" || classification.entityType === "Individual";
     if (isUserRecord) return false;
 
-    const q = search.toLowerCase();
-    const matchSearch =
-      c.name.toLowerCase().includes(q) ||
-      c.city.toLowerCase().includes(q) ||
-      c.state.toLowerCase().includes(q) ||
-      (c.email || "").toLowerCase().includes(q) ||
-      (c.phone && c.phone.includes(q));
+    const normalizeSearch = (value: unknown) => String(value ?? "").normalize("NFKC").toLocaleLowerCase().trim().replace(/\s+/g, " ");
+    const terms = normalizeSearch(search).split(" ").filter(Boolean);
+    const searchableText = normalizeSearch([
+      c.name, c.city, c.state, c.emirate, c.place, c.address, c.orgType,
+      c.email, c.phone, c.gst, c.vatNumber,
+      ...(c.contacts || []).flatMap(contact => [contact.name, contact.phone, contact.email, contact.designation]),
+    ].filter(Boolean).join(" "));
+    const phoneDigits = String(c.phone || "").replace(/\D/g, "");
+    const matchSearch = terms.every(term => searchableText.includes(term) ||
+      (/^[+\d()-]+$/.test(term) && term.replace(/\D/g, "").length > 0 && phoneDigits.includes(term.replace(/\D/g, ""))));
     const matchType = filterType === "All" || c.orgType === filterType;
     const matchStatus = filterStatus === "All" || c.status === filterStatus;
     const matchEmirate = filterEmirate === "All" || c.state === filterEmirate || c.emirate === filterEmirate;
@@ -977,7 +979,7 @@ function ClientsContent() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, animation: "fadeIn 0.3s ease" }}>
-      <div className="directory-section-switch" aria-label="Directory section">
+      <div className="directory-section-switch directory-mobile-only" aria-label="Directory section">
         <button type="button" aria-pressed={directorySection === "organisations"} onClick={() => setDirectorySection("organisations")}><Building2 size={17} />Organisations</button>
         <button type="button" aria-pressed={directorySection === "people"} onClick={() => setDirectorySection("people")}><Users size={17} />People</button>
       </div>
@@ -1197,7 +1199,7 @@ function ClientsContent() {
           >
             <span style={{ fontWeight: 700, color: "#004d66" }}>{filtered.length}</span>
             <span style={{ color: "#cbd5e1" }}>/</span>
-            <span>{clients.length} Facilities</span>
+            <span role="status">{isLoadingClients && clients.length === 0 ? "Loading organisations…" : `${clients.length} Facilities`}</span>
           </div>
 
           {/* Segmented View Switcher */}
@@ -3698,7 +3700,7 @@ function ClientProfile({
         source: "FastonMed CRM",
         type: "system",
         title: `Lead created: ${lead.product}`,
-        description: `${lead.stage} • ${lead.priority} priority • Assigned to ${lead.assignedTo}${lead.estimatedValue ? ` • ${formatCurrency(lead.estimatedValue)}` : ""}`,
+        description: `Lead received: ${lead.leadDate || lead.createdAt || "Not recorded"} • ${lead.stage} • ${lead.priority} priority • Assigned to ${lead.assignedTo}${lead.estimatedValue ? ` • ${formatCurrency(lead.estimatedValue)}` : ""}`,
         date: created.date,
         time: created.time,
         status: lead.stage,

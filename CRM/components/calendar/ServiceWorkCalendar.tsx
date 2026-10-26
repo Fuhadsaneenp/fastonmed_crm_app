@@ -1,4 +1,5 @@
 "use client";
+import CustomLightSelect from "@/components/CustomLightSelect";
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import * as Popover from "@radix-ui/react-popover";
@@ -197,8 +198,8 @@ export default function ServiceWorkCalendar({ onSelectTicket }: ServiceWorkCalen
   const [tickets, setTickets] = useState<ServiceTicket[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [emsEmployees, setEmsEmployees] = useState<Employee[]>(mockEmployees);
-  const [currentYear, setCurrentYear] = useState(2026);
-  const [currentMonth, setCurrentMonth] = useState(8); // September (0-indexed: 8 = Sep)
+  const [currentYear, setCurrentYear] = useState(() => new Date().getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(() => new Date().getMonth());
 
   // Filters
   const [selectedClient, setSelectedClient] = useState<string>("All");
@@ -507,8 +508,9 @@ export default function ServiceWorkCalendar({ onSelectTicket }: ServiceWorkCalen
   };
 
   const handleGoToday = () => {
-    setCurrentYear(2026);
-    setCurrentMonth(8); // Sep 2026
+    const today = new Date();
+    setCurrentYear(today.getFullYear());
+    setCurrentMonth(today.getMonth());
   };
 
   const openCreateModalForDate = (dateStr: string) => {
@@ -1161,7 +1163,7 @@ export default function ServiceWorkCalendar({ onSelectTicket }: ServiceWorkCalen
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                        <span
+                        <span className="service-day-number"
                           style={{
                             fontSize: 13,
                             fontWeight: isToday ? 800 : 700,
@@ -1553,7 +1555,7 @@ export default function ServiceWorkCalendar({ onSelectTicket }: ServiceWorkCalen
                   </div>
 
                   {/* Tickets List */}
-                  <div style={{ padding: "16px 24px", overflowY: "auto", maxHeight: "45vh", display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div className="service-day-tickets" style={{ padding: "16px 24px", overflowY: "auto", maxHeight: "45vh", display: "flex", flexDirection: "column", gap: 10 }}>
                     {dayTickets.length === 0 ? (
                       <div style={{ textAlign: "center", padding: "32px 0", color: "#94a3b8" }}>
                         No service tickets scheduled on this day.
@@ -1563,7 +1565,7 @@ export default function ServiceWorkCalendar({ onSelectTicket }: ServiceWorkCalen
                         const cfg = SERVICE_STATUS_CONFIG[ticket.status] || SERVICE_STATUS_CONFIG["Assigned"];
 
                         return (
-                          <div
+                          <div className="service-day-ticket-card"
                             key={ticket.id}
                             onClick={() => {
                               setSelectedDayPopup(null);
@@ -1599,7 +1601,7 @@ export default function ServiceWorkCalendar({ onSelectTicket }: ServiceWorkCalen
                                   )}
                                 </div>
                                 <div style={{ fontSize: 12.5, fontWeight: 600, color: "#334155" }}>
-                                  {ticket.equipment} ({ticket.model})
+                                  {ticket.equipment}{ticket.model ? ` (${ticket.model})` : ""}
                                 </div>
                                 <div style={{ fontSize: 12, color: "#64748b", marginTop: 3 }}>
                                   {ticket.complaint}
@@ -1627,41 +1629,30 @@ export default function ServiceWorkCalendar({ onSelectTicket }: ServiceWorkCalen
                             <div style={{ marginTop: 10, paddingTop: 8, borderTop: "1px solid #f1f5f9", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", fontSize: 11.5, color: "#475569" }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                                  <span>👤</span>
-                                  <span>Engineer: <strong>{ticket.assignedEngineerName}</strong></span>
+                                  
+                                  <span>Engineer · <strong>{ticket.assignedEngineerName}</strong></span>
                                 </div>
                                 {ticket.concernedPerson && (
                                   <div style={{ display: "flex", alignItems: "center", gap: 5, color: "#0369a1" }}>
-                                    <span>🏥</span>
-                                    <span>Concerned: <strong>{ticket.concernedPerson}</strong></span>
-                                    {ticket.contactPhone && <span style={{ color: "#64748b" }}>({ticket.contactPhone})</span>}
+                                    
+                                    <span>Contact · <strong>{ticket.concernedPerson}</strong></span>
+                                    {ticket.contactPhone && <span style={{ color: "#64748b" }}>{ticket.contactPhone}</span>}
                                   </div>
                                 )}
                               </div>
 
                               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                {/* Quick Status Dropdown */}
-                                <select
-                                  value={ticket.status}
-                                  onClick={(e) => e.stopPropagation()}
-                                  onChange={(e) => handleUpdateStatus(ticket.id, e.target.value as ServiceStatus)}
-                                  style={{
-                                    fontSize: 11.5,
-                                    fontWeight: 700,
-                                    padding: "3px 8px",
-                                    borderRadius: 6,
-                                    border: `1px solid ${cfg.border}`,
-                                    backgroundColor: cfg.bg,
-                                    color: cfg.text,
-                                    cursor: "pointer",
-                                  }}
-                                >
-                                  {SERVICE_STATUSES.map((st) => (
-                                    <option key={st} value={st}>
-                                      {st}
-                                    </option>
-                                  ))}
-                                </select>
+                                <div className="service-card-status-control" onClick={(event) => event.stopPropagation()}>
+                                  <CustomLightSelect
+                                    value={ticket.status}
+                                    options={SERVICE_STATUSES.map(status => ({ value: status, label: status }))}
+                                    clearable={false}
+                                    searchable={false}
+                                    sheetTitle="Ticket status"
+                                    onChange={(value) => handleUpdateStatus(ticket.id, value as ServiceStatus)}
+                                    buttonStyle={{ minHeight: 44, width: "100%", borderRadius: 10, border: "1px solid #d9e6df", background: "#f2f8f5", color: "#21644e", fontSize: 12, fontWeight: 600 }}
+                                  />
+                                </div>
 
                                 {/* View Details Button */}
                                 <button
@@ -1687,6 +1678,7 @@ export default function ServiceWorkCalendar({ onSelectTicket }: ServiceWorkCalen
                                 {/* Delete Button */}
                                 <button
                                   type="button"
+                                  aria-label={`Delete ${ticket.ticketNumber}`}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleDeleteTicket(ticket.id);

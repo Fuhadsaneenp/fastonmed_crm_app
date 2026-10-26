@@ -952,6 +952,7 @@ export function Header({ title, subtitle, onMobileMenu, mobileMenuOpen }: Header
         <button className="account-menu-backdrop" aria-label="Close account menu" onClick={() => setShowAccountMenu(false)} />
         <div className="crm-account-menu">
           <strong>{currentUser?.name || "Your account"}</strong><span>{currentUser?.role || ""}</span>
+          <button type="button" onClick={() => { setShowAccountMenu(false); router.push("/profile"); }}><Users size={17}/>My profile</button>
           <button type="button" onClick={() => { setShowAccountMenu(false); router.push("/employees"); }}><Users size={17}/>Team directory</button>
           <button type="button" className="account-signout" onClick={() => { clearAuthSession(); window.location.href = "/login"; }}><LogOut size={17}/>Sign out</button>
         </div>

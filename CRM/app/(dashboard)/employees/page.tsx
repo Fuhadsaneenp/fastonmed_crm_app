@@ -1,4 +1,6 @@
 "use client";
+import "./employee-performance.css";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { apiRequest } from "@/lib/api-client";
 import { formatCurrency, getInitials } from "@/lib/utils";
@@ -76,7 +78,7 @@ export default function EmployeesPage() {
   const totalRevenue = employees.reduce((s, e) => s + e.performance.revenue, 0);
 
   if (selected) {
-    return <EmployeeProfile employee={selected} onBack={() => setSelected(null)} colorIdx={employees.indexOf(selected)} />;
+    return <EmployeeProfile employee={selected} onBack={() => setSelected(null)} onSaved={(updated) => { setEmployees(rows => rows.map(row => row.id === updated.id ? updated : row)); setSelected(updated); }} colorIdx={employees.indexOf(selected)} />;
   }
 
   return (
@@ -516,7 +518,29 @@ export default function EmployeesPage() {
   );
 }
 
-function EmployeeProfile({ employee, onBack, colorIdx }: { employee: Employee; onBack: () => void; colorIdx: number }) {
+function EmployeeProfile({ employee, onBack, colorIdx, onSaved }: { employee: Employee; onBack: () => void; colorIdx: number; onSaved: (employee: Employee) => void }) {
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ name: employee.name, phone: employee.phone || "" });
+  if (editing) return <div className="card" style={{ maxWidth: 640, margin: "0 auto", padding: 20 }}>
+    <button type="button" className="btn btn-secondary" onClick={() => setEditing(false)}>← Back to employee</button>
+    <h1 style={{ fontSize: 20, fontWeight: 700, margin: "20px 0" }}>Edit employee</h1>
+    <form style={{ display: "flex", flexDirection: "column", gap: 18 }} onSubmit={async event => {
+      event.preventDefault(); setSaving(true);
+      try {
+        const updated = await apiRequest<Employee>(`/api/employees/${encodeURIComponent(employee.id)}`, { method: "PUT", body: JSON.stringify({ name: form.name.trim(), phone: form.phone.trim() }) });
+        onSaved(updated); setEditing(false); toast.success("Employee details saved");
+        window.dispatchEvent(new Event("fastonmed_employees_updated"));
+      } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to save employee"); }
+      finally { setSaving(false); }
+    }}>
+      <label className="form-label">Full name<input className="form-input" required maxLength={100} value={form.name} onChange={event => setForm({ ...form, name: event.target.value })} style={{ minHeight: 46, marginTop: 8 }}/></label>
+      <label className="form-label">Phone<input className="form-input" type="tel" maxLength={40} value={form.phone} onChange={event => setForm({ ...form, phone: event.target.value })} style={{ minHeight: 46, marginTop: 8 }}/></label>
+      <p style={{ fontSize: 12, color: "#64748b" }}>Sign-in details and password changes are available from My profile.</p>
+      <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? "Saving…" : "Save changes"}</button>
+    </form>
+  </div>;
   const convRate = employee.performance.leadsAssigned > 0
     ? Math.round((employee.performance.dealsClosed / employee.performance.leadsAssigned) * 100)
     : 0;
@@ -555,8 +579,8 @@ function EmployeeProfile({ employee, onBack, colorIdx }: { employee: Employee; o
               <p style={{ color: "#64748b", fontSize: 14 }}>{employee.role} · {employee.department}</p>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button className="btn btn-secondary">✏️ Edit</button>
-              <button className="btn btn-primary">📋 Assign Task</button>
+              <button type="button" className="btn btn-secondary" onClick={() => { setForm({ name: employee.name, phone: employee.phone || "" }); setEditing(true); }}>✏️ Edit</button>
+              <button type="button" className="btn btn-primary" onClick={() => router.push(`/tasks?member=${encodeURIComponent(employee.name)}`)}>📋 Assign Task</button>
             </div>
           </div>
         </div>
@@ -590,8 +614,8 @@ function EmployeeProfile({ employee, onBack, colorIdx }: { employee: Employee; o
         </div>
 
         <div className="card" style={{ padding: 24 }}>
-          <h3 style={{ fontWeight: 700, fontSize: 16, marginBottom: 20 }}>Performance Metrics</h3>
-          <div data-mobile-grid="stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
+          <h3 className="employee-performance-title" style={{ fontWeight: 700, fontSize: 16, marginBottom: 20 }}>Performance</h3>
+          <div className="employee-performance-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
             {employee.department === "Technical" ? (
               <>
                 {[
@@ -625,9 +649,7 @@ function EmployeeProfile({ employee, onBack, colorIdx }: { employee: Employee; o
               <span style={{ fontSize: 13, color: "#64748b" }}>Revenue Generated</span>
               <span style={{ fontWeight: 700, fontSize: 16, color: "#059669" }}>{formatCurrency(employee.performance.revenue)}</span>
             </div>
-            <div className="progress-bar">
-              <div className="progress-fill" style={{ width: "75%" }} />
-            </div>
+
           </div>
         </div>
       </div>

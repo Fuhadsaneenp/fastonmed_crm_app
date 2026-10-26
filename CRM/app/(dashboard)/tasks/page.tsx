@@ -1,4 +1,5 @@
 "use client";
+import "./archive-mobile.css";
 import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { mockEmployees } from "@/lib/mock-data";
@@ -939,12 +940,12 @@ function TasksContent() {
   const filteredArchiveTasks = archiveTasks.filter((task) => {
     const matchSearch =
       !archiveSearch.trim() ||
-      task.title.toLowerCase().includes(archiveSearch.toLowerCase()) ||
-      (task.clientName && task.clientName.toLowerCase().includes(archiveSearch.toLowerCase())) ||
-      (task.assignedTo && task.assignedTo.toLowerCase().includes(archiveSearch.toLowerCase())) ||
-      (task.notes && task.notes.toLowerCase().includes(archiveSearch.toLowerCase())) ||
-      (task.declineReason && task.declineReason.toLowerCase().includes(archiveSearch.toLowerCase())) ||
-      (task.type && task.type.toLowerCase().includes(archiveSearch.toLowerCase()));
+      task.title.toLowerCase().includes(archiveSearch.trim().toLowerCase()) ||
+      (task.clientName && task.clientName.toLowerCase().includes(archiveSearch.trim().toLowerCase())) ||
+      (task.assignedTo && task.assignedTo.toLowerCase().includes(archiveSearch.trim().toLowerCase())) ||
+      (task.notes && task.notes.toLowerCase().includes(archiveSearch.trim().toLowerCase())) ||
+      (task.declineReason && task.declineReason.toLowerCase().includes(archiveSearch.trim().toLowerCase())) ||
+      (task.type && task.type.toLowerCase().includes(archiveSearch.trim().toLowerCase()));
 
     const matchPriority = archivePriorityFilter === "All" || task.priority === archivePriorityFilter;
     return matchSearch && matchPriority;
@@ -1549,7 +1550,7 @@ function TasksContent() {
                       {detailTask?.title}
                     </Dialog.Title>
                     <Dialog.Description style={{ color: "rgba(255,255,255,0.82)", fontSize: 13.5, marginTop: 8 }}>
-                      {detailTask?.clientName || "General task"} · Assigned to {detailTask?.assignedTo} · Created by {detailTask?.createdBy || "Hashim"}
+                      {detailTask?.clientName || "General task"}
                     </Dialog.Description>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
@@ -1619,6 +1620,11 @@ function TasksContent() {
                         <div style={{ fontSize: 14, color: "#0f172a", fontWeight: 800 }}>{item.value}</div>
                       </div>
                     ))}
+                  </div>
+
+                  <div className="task-detail-people">
+                    <div><span>Assigned to</span><strong>{detailTask?.assignedTo || "Unassigned"}</strong></div>
+                    <div><span>Created by</span><strong>{detailTask?.createdBy || "Not recorded"}</strong></div>
                   </div>
 
                   {detailTask?.notes && (
@@ -1734,9 +1740,9 @@ function TasksContent() {
       {/* ─── WHEN IN MY TEAM TASKS: SHOW TEAM TASKS BOARD DIRECTORY (MATCHING SCREENSHOT) ── */}
       {/* ─── WHEN IN COMPLETED WORK OR DECLINED TASKS: EXECUTIVE CARDS & LIST VIEWS ── */}
       {archiveSection === "completed" || archiveSection === "declined" ? (
-        <section style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <section className="task-archive" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {/* Executive Header Banner */}
-          <div
+          <div className="task-archive-heading"
             style={{
               display: "flex",
               justifyContent: "space-between",
@@ -1891,7 +1897,8 @@ function TasksContent() {
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="Search by title, client, or type..."
+                  aria-label="Search archived tasks"
+                  placeholder="Search tasks, clients or team..."
                   value={archiveSearch}
                   onChange={(e) => setArchiveSearch(e.target.value)}
                   style={{
@@ -1927,6 +1934,7 @@ function TasksContent() {
               {/* Reporting Period */}
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div style={{ minWidth: 120 }}>
+                  <span className="archive-filter-label">Period</span>
                   <CustomLightSelect
                     value={archivePeriod}
                     options={[
@@ -1954,7 +1962,8 @@ function TasksContent() {
               </div>
 
               {/* Priority Filter */}
-              <div style={{ minWidth: 130 }}>
+              <div className="archive-priority-field" style={{ minWidth: 130 }}>
+                <span className="archive-filter-label">Priority</span>
                 <CustomLightSelect
                   value={archivePriorityFilter}
                   options={[
@@ -1973,10 +1982,22 @@ function TasksContent() {
 
           </div>
 
+          <div className="archive-results-bar" aria-live="polite">
+            <span>{filteredArchiveTasks.length} {filteredArchiveTasks.length === 1 ? "task" : "tasks"} found</span>
+            {(archiveSearch || archivePeriod !== "all" || archivePriorityFilter !== "All") && <button type="button" onClick={() => { setArchiveSearch(""); setArchivePeriod("all"); setArchivePriorityFilter("All"); }}>Reset filters</button>}
+          </div>
+          <div className="archive-mobile-list">
+            {filteredArchiveTasks.map(task => <button key={task.id} type="button" className="archive-mobile-card" onClick={() => setDetailTask(task)} aria-label={`View ${task.title}`}>
+              <div className="archive-mobile-card-heading"><strong>{task.title}</strong><span aria-hidden="true">›</span></div>
+              <span className="archive-mobile-client">{task.clientName || "Internal activity"}</span>
+              <div className="archive-mobile-meta"><span>{task.type}</span><span>{task.priority} priority</span></div>
+              <div className="archive-mobile-card-footer"><span>{task.assignedTo || "Unassigned"}</span><time>{(archiveSection === "completed" ? task.completedDate : task.declinedAt)?.slice(0, 10) || "Date unavailable"}</time></div>
+            </button>)}
+          </div>
           {/* ─── LIST (TABLE) VIEW ONLY ─── */}
           {filteredArchiveTasks.length > 0 && (
             <div
-              className="card"
+              className="card archive-desktop-table"
               style={{
                 padding: 0,
                 borderRadius: 14,
@@ -3823,218 +3844,17 @@ function TasksContent() {
                   <label className="form-label" style={{ fontSize: 12, marginBottom: 4 }}>
                     Priority
                   </label>
-                  <select
-                    className="form-input"
-                    value={newPriority}
-                    onChange={(e) => setNewPriority(e.target.value as any)}
-                    style={{ fontSize: 13 }}
-                  >
-                    <option value="Low">Low Priority</option>
-                    <option value="Medium">Medium Priority</option>
-                    <option value="High">High Priority</option>
-                  </select>
+                  <CustomLightSelect value={newPriority} options={["Low", "Medium", "High"]} onChange={value => setNewPriority(value as typeof newPriority)} clearable={false} searchable={false} sheetTitle="Priority" buttonStyle={{ minHeight: 48, borderRadius: 12 }} />
                 </div>
 
-                <div ref={clientDropdownRef} style={{ position: "relative" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                    <label className="form-label" style={{ fontSize: 12, margin: 0 }}>
-                      Client / Facility (optional)
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowAddClientModal(true);
-                        setClientSearchOpen(false);
-                      }}
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        color: "#004d66",
-                        fontSize: 11.5,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 3,
-                        padding: "1px 4px",
-                        borderRadius: 4,
-                      }}
-                    >
-                      <Plus size={12} color="#004d66" />
-                      <span>Add New Client</span>
-                    </button>
-                  </div>
-
-                  {/* Search / Select Client Input */}
-                  <div style={{ position: "relative" }}>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="Search existing facility or type new..."
-                      value={newClientName}
-                      onFocus={() => setClientSearchOpen(true)}
-                      onChange={(e) => {
-                        setNewClientName(e.target.value);
-                        setSelectedClientId(undefined);
-                        setClientSearchOpen(true);
-                      }}
-                      style={{
-                        fontSize: 13,
-                        paddingLeft: 32,
-                        paddingRight: newClientName ? 30 : 12,
-                        height: 38,
-                        borderColor: selectedClientId ? "#10b981" : undefined,
-                        backgroundColor: selectedClientId ? "#f0fdf4" : undefined,
-                      }}
-                    />
-                    <Building2
-                      size={14}
-                      style={{
-                        position: "absolute",
-                        left: 10,
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        color: selectedClientId ? "#059669" : "#94a3b8",
-                        pointerEvents: "none",
-                      }}
-                    />
-                    {newClientName && (
-                      <button
-                        type="button"
-                        onClick={handleClearClient}
-                        title="Clear client"
-                        style={{
-                          position: "absolute",
-                          right: 8,
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                          background: "transparent",
-                          border: "none",
-                          color: "#94a3b8",
-                          cursor: "pointer",
-                          padding: 4,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <X size={13} />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Dropdown Suggestions & Quick Add */}
-                  {clientSearchOpen && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "100%",
-                        left: 0,
-                        right: 0,
-                        marginTop: 4,
-                        backgroundColor: "#ffffff",
-                        borderRadius: 8,
-                        boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
-                        border: "1px solid #e2e8f0",
-                        zIndex: 50,
-                        maxHeight: 250,
-                        overflowY: "auto",
-                      }}
-                    >
-                      {/* Option to create new client if typed name doesn't match an existing facility */}
-                      {newClientName.trim() && !hasExactMatch && (
-                        <div
-                          onClick={() => {
-                            setClientSearchOpen(false);
-                            setShowAddClientModal(true);
-                          }}
-                          style={{
-                            padding: "9px 12px",
-                            backgroundColor: "#f0fdf4",
-                            borderBottom: "1px solid #dcfce7",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                            fontSize: 12.5,
-                            fontWeight: 600,
-                            color: "#15803d",
-                            transition: "background-color 0.15s ease",
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#dcfce7")}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#f0fdf4")}
-                        >
-                          <Plus size={14} color="#15803d" />
-                          <div style={{ flex: 1 }}>
-                            <span>Add &quot;{newClientName.trim()}&quot; as new client</span>
-                            <div style={{ fontSize: 10.5, color: "#166534", fontWeight: 400 }}>
-                              Save to company client database
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      <div
-                        style={{
-                          padding: "6px 12px",
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: "#94a3b8",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                          backgroundColor: "#f8fafc",
-                          borderBottom: "1px solid #f1f5f9",
-                        }}
-                      >
-                        {newClientName.trim() ? "Matching Existing Clients" : "Recent / Registered Facilities"}
-                      </div>
-
-                      {matchingClients.map((client) => {
-                        const isSelected = selectedClientId === client.id;
-                        return (
-                          <div
-                            key={client.id}
-                            onClick={() => handleSelectClient(client)}
-                            style={{
-                              padding: "9px 14px",
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                              backgroundColor: isSelected ? "#eff6ff" : "#ffffff",
-                              borderBottom: "1px solid #f8fafc",
-                              transition: "background-color 0.12s ease",
-                            }}
-                            onMouseEnter={(e) => {
-                              if (!isSelected) e.currentTarget.style.backgroundColor = "#f8fafc";
-                            }}
-                            onMouseLeave={(e) => {
-                              if (!isSelected) e.currentTarget.style.backgroundColor = "#ffffff";
-                            }}
-                          >
-                            <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: 1 }}>
-                              <Building2 size={15} style={{ color: isSelected ? "#2563eb" : "#64748b", flexShrink: 0 }} />
-                              <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
-                                <div style={{ fontSize: 13, fontWeight: isSelected ? 700 : 500, color: "#0f172a" }}>
-                                  {client.name}
-                                </div>
-                                <div style={{ fontSize: 11.5, color: "#64748b" }}>
-                                  {client.state || client.city || "UAE"} · {client.orgType || "Hospital"}
-                                </div>
-                              </div>
-                            </div>
-                            {isSelected && <Check size={15} color="#2563eb" style={{ flexShrink: 0, marginLeft: 8 }} />}
-                          </div>
-                        );
-                      })}
-
-                      {matchingClients.length === 0 && !newClientName.trim() && (
-                        <div style={{ padding: "16px 12px", textAlign: "center", fontSize: 12, color: "#94a3b8" }}>
-                          No facilities registered yet
-                        </div>
-                      )}
-                    </div>
-                  )}
+                <div>
+                  <label className="form-label">Client / Facility (optional)</label>
+                  <CustomLightSelect value={selectedClientId || ""}
+                    options={clients.map(client => ({ value: client.id, label: client.name, subtext: [client.city, client.orgType].filter(Boolean).join(" · ") }))}
+                    onChange={value => { const client = clients.find(item => item.id === value); if (client) handleSelectClient(client); else { setSelectedClientId(undefined); setNewClientName(""); } }}
+                    searchable sheetTitle="Choose organisation" placeholder="Choose organisation"
+                    onAddNew={() => setShowAddClientModal(true)} addNewLabel="+ Add organisation"
+                    buttonStyle={{ minHeight: 48, borderRadius: 12, fontSize: 13 }} />
                 </div>
 
                 <div style={{ gridColumn: "1 / -1" }}>

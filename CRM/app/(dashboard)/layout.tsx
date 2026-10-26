@@ -10,6 +10,7 @@ import { syncAllSharedBrowserData } from "@/lib/shared-data-client";
 import { GlobalImpersonationBar } from "@/components/GlobalImpersonationBar";
 
 const PAGE_TITLES: Record<string, { title: string; subtitle?: string }> = {
+  "/profile": { title: "My Profile", subtitle: "Personal details and security" },
   "/dashboard": { title: "Dashboard", subtitle: "FastonMed Business Overview" },
   "/tasks": { title: "Tasks", subtitle: "Task Management & Team Workload" },
   "/clients": { title: "Organisations", subtitle: "Hospitals, Clinics & Healthcare Facilities" },
@@ -59,7 +60,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     // Upload any records created while the server was unavailable, then hydrate
     // this browser with the shared database used by every signed-in employee.
-    if (window.innerWidth >= 768) void syncAllSharedBrowserData();
+    // Give the active page priority over the whole-workspace migration.
+    const syncDelay = window.setTimeout(() => {
+      if (document.visibilityState === "visible" && window.innerWidth >= 768) {
+        void syncAllSharedBrowserData();
+      }
+    }, 15_000);
 
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -69,6 +75,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     window.addEventListener("resize", handleResize);
 
     return () => {
+      window.clearTimeout(syncDelay);
       window.removeEventListener("resize", handleResize);
     };
   }, [router]);

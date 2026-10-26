@@ -1,4 +1,5 @@
 "use client";
+import "./pagination.css";
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
@@ -157,7 +158,7 @@ export default function QuotationsPage() {
 
     // 2. Fetch cross-account quotes from server in background
     fetchZohoLiveQuotesFromServer().then((serverQuotes) => {
-      if (serverQuotes && serverQuotes.length > 0) {
+      if (Array.isArray(serverQuotes)) {
         setQuotes(serverQuotes);
       }
     });
@@ -191,41 +192,20 @@ export default function QuotationsPage() {
   const handleSyncZoho = async () => {
     setIsSyncing(true);
     try {
-      const res = await fetch("/api/zoho/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
+      const res = await fetch("/api/zoho/quotations", { method: "POST" });
       const data = await res.json();
-      if (data && data.success && data.data && Array.isArray(data.data.quotes) && data.data.quotes.length > 0) {
-        const mapped: Quotation[] = data.data.quotes.map((item: any, i: number) => ({
-          id: item.estimate_id || `quote-${i}`,
-          quotationNumber: item.estimate_number || `FMT-QT26-0${300 + i}`,
-          referenceNumber: item.reference_number || "",
-          clientId: item.customer_id || `cust-${i}`,
-          clientName: item.customer_name || "Customer",
-          date: item.date || new Date().toISOString().slice(0, 10),
-          validUntil: item.expiry_date || "",
-          status: (item.status === "draft" ? "Draft" : item.status === "approved" ? "Approved" : "Sent") as QuotationStatus,
-          total: Number(item.total || 0),
-          subtotal: Number(item.total || 0),
-          tax: Number(item.total || 0) * 0.05,
-          discount: 0,
-          items: [{ id: `it-${i}`, product: "Medical Equipment & Solutions", qty: 1, rate: Number(item.total || 0), amount: Number(item.total || 0) }],
-          preparedBy: item.salesperson_name || currentUser?.name || "Riyas",
-          createdAt: item.date || new Date().toISOString().slice(0, 10),
-        }));
-        saveZohoLiveQuotes(mapped);
-        setQuotes(mapped);
-        toast.success(`Successfully synchronized all ${mapped.length} quotes from Zoho Books!`);
-        return;
+      if (!res.ok || !data.success || !Array.isArray(data.quotes)) {
+        throw new Error(data.error || "Could not synchronize quotations from Zoho Books.");
       }
-    } catch {
-      // fallback to live records
+      localStorage.setItem("fastonmed_zoho_live_quotes", JSON.stringify(data.quotes));
+      setQuotes(data.quotes);
+      window.dispatchEvent(new Event("fastonmed_quotes_updated"));
+      toast.success(`Updated ${data.count} quotations from Zoho Books.`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not synchronize quotations. Existing quotations were preserved.");
     } finally {
       setIsSyncing(false);
     }
-    toast.error("Could not synchronize quotations from Zoho Books. Existing quotations were not changed.");
   };
 
   // Import Quotes from Zoho Books CSV or JSON Export
@@ -386,10 +366,17 @@ export default function QuotationsPage() {
     return list;
   }, [quotes, search, statusFilter, creatorFilter, sortColumn, sortDirection, currentUser]);
 
+  const [quotePage, setQuotePage] = useState(1);
+  const quotePageSize = 25;
+  const quotePageCount = Math.max(1, Math.ceil(filteredQuotes.length / quotePageSize));
+  const activeQuotePage = Math.min(quotePage, quotePageCount);
+  const pageQuotes = filteredQuotes.slice((activeQuotePage - 1) * quotePageSize, activeQuotePage * quotePageSize);
+  useEffect(() => { setQuotePage(1); setSelectedIds([]); }, [search, statusFilter, creatorFilter, sortColumn, sortDirection]);
+
   // Selection handlers
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedIds(filteredQuotes.map((q) => q.id));
+      setSelectedIds(pageQuotes.map((q) => q.id));
     } else {
       setSelectedIds([]);
     }
@@ -570,7 +557,7 @@ export default function QuotationsPage() {
               }}
             >
               <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#16a34a" }} />
-              Live Zoho Books Synced
+              Shared Quotations
             </span>
           </div>
           <p style={{ fontSize: 12.5, color: "#64748b", margin: "3px 0 0 0" }}>
@@ -818,7 +805,7 @@ export default function QuotationsPage() {
                 <th style={{ padding: "12px 14px", width: 40, textAlign: "center" }}>
                   <input
                     type="checkbox"
-                    checked={filteredQuotes.length > 0 && selectedIds.length === filteredQuotes.length}
+                    checked={pageQuotes.length > 0 && pageQuotes.every((quote) => selectedIds.includes(quote.id))}
                     onChange={handleSelectAll}
                     style={{ cursor: "pointer", borderRadius: 3 }}
                   />
@@ -846,7 +833,7 @@ export default function QuotationsPage() {
                   </td>
                 </tr>
               ) : (
-                filteredQuotes.map((quote) => (
+                pageQuotes.map((quote) => (
                   <tr
                     key={quote.id}
                     style={{
@@ -930,6 +917,15 @@ export default function QuotationsPage() {
           </table>
         </div>
       </div>
+
+      <nav className="quotes-pagination" aria-label="Quotation pages">
+        <p aria-live="polite">{filteredQuotes.length ? (activeQuotePage - 1) * quotePageSize + 1 : 0}–{Math.min(activeQuotePage * quotePageSize, filteredQuotes.length)} of {filteredQuotes.length} quotes</p>
+        <div>
+          <button type="button" disabled={activeQuotePage === 1} onClick={() => { setQuotePage(activeQuotePage - 1); setSelectedIds([]); }}>Previous</button>
+          <span>Page {activeQuotePage} of {quotePageCount}</span>
+          <button type="button" disabled={activeQuotePage === quotePageCount} onClick={() => { setQuotePage(activeQuotePage + 1); setSelectedIds([]); }}>Next</button>
+        </div>
+      </nav>
 
       {/* MODAL: Quote Details & Proposal Preview */}
       {selectedQuote && (

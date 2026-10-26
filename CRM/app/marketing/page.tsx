@@ -106,7 +106,7 @@ export default function MarketingHubPage() {
       : campaigns.filter((c) => c.platform === filterPlatform);
 
   return (
-    <div style={{ maxWidth: 1280, margin: "0 auto", padding: "24px 20px 48px" }}>
+    <div className="marketing-overview" style={{ maxWidth: 1280, margin: "0 auto", padding: "24px 20px 48px" }}>
       {/* Header Bar */}
       <div
         style={{

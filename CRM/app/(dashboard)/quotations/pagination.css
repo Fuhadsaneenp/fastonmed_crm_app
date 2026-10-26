@@ -1,0 +1,7 @@
+.quotes-pagination { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 20px 0; color: #60776e; font-size: 12px; }
+.quotes-pagination p { margin: 0; }
+.quotes-pagination > div { display: flex; align-items: center; gap: 12px; }
+.quotes-pagination button { min-height: 44px; padding: 10px 16px; border: 1px solid #dce7e2; border-radius: 10px; background: #fff; color: #187e65; font: inherit; font-weight: 600; cursor: pointer; }
+.quotes-pagination button:disabled { opacity: .45; cursor: default; }
+.quotes-pagination button:focus-visible { outline: 3px solid #9acdb8; outline-offset: 2px; }
+@media (max-width: 767px) { .quotes-pagination { flex-direction: column; padding-bottom: 24px; } .quotes-pagination > div { width: 100%; justify-content: space-between; } }

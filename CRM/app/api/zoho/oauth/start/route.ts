@@ -1,42 +1,27 @@
 import { NextResponse } from "next/server";
-
-const ZOHO_SCOPES = [
-  "ZohoBooks.settings.READ",
-  "ZohoBooks.contacts.READ",
-  "ZohoBooks.contacts.CREATE",
-  "ZohoBooks.contacts.UPDATE",
-  "ZohoBooks.invoices.READ",
-  "ZohoBooks.invoices.CREATE",
-  "ZohoBooks.invoices.UPDATE",
-  "ZohoBooks.customerpayments.READ",
-  "ZohoBooks.customerpayments.CREATE",
-];
+import { randomBytes } from "node:crypto";
+import { getDbPool } from "@/lib/db";
 
 export async function GET(req: Request) {
-  const clientId = process.env.ZOHO_CLIENT_ID;
-  if (!clientId) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Missing ZOHO_CLIENT_ID. Add Zoho OAuth credentials to your environment first.",
-      },
-      { status: 500 }
-    );
-  }
-
   const requestUrl = new URL(req.url);
-  const redirectUri =
-    process.env.ZOHO_REDIRECT_URI || `${requestUrl.origin}/api/zoho/oauth/callback`;
-  const accountsUrl = process.env.ZOHO_ACCOUNTS_URL || "https://accounts.zoho.com";
-
-  const authUrl = new URL("/oauth/v2/auth", accountsUrl);
-  authUrl.searchParams.set("scope", ZOHO_SCOPES.join(","));
-  authUrl.searchParams.set("client_id", clientId);
-  authUrl.searchParams.set("response_type", "code");
-  authUrl.searchParams.set("redirect_uri", redirectUri);
-  authUrl.searchParams.set("access_type", "offline");
-  authUrl.searchParams.set("prompt", "consent");
-  authUrl.searchParams.set("state", "fastonmed_zoho_books");
-
-  return NextResponse.redirect(authUrl);
+  try {
+    const [rows]: any = await getDbPool().query("SELECT `value` FROM CompanySetting WHERE `key`=? ORDER BY updatedAt DESC LIMIT 1", ["fastonmed_zoho_config_v1"]);
+    const saved = typeof rows[0]?.value === "string" ? JSON.parse(rows[0].value) : rows[0]?.value || {};
+    const clientId = process.env.ZOHO_CLIENT_ID || saved.clientId;
+    if (!clientId) return NextResponse.json({ success: false, error: "Configure the Zoho OAuth client before connecting." }, { status: 400 });
+    const state = randomBytes(32).toString("hex");
+    const authUrl = new URL("/oauth/v2/auth", process.env.ZOHO_ACCOUNTS_URL || "https://accounts.zoho.com");
+    authUrl.searchParams.set("scope", "ZohoBooks.settings.READ,ZohoBooks.invoices.READ,ZohoBooks.estimates.READ");
+    authUrl.searchParams.set("client_id", clientId);
+    authUrl.searchParams.set("response_type", "code");
+    authUrl.searchParams.set("redirect_uri", process.env.ZOHO_REDIRECT_URI || "https://crm.fastonmed.com/api/zoho/oauth/callback");
+    authUrl.searchParams.set("access_type", "offline");
+    authUrl.searchParams.set("prompt", "consent");
+    authUrl.searchParams.set("state", state);
+    const response = NextResponse.redirect(authUrl);
+    response.cookies.set("fastonmed_zoho_oauth_state", state, { httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 600 });
+    return response;
+  } catch {
+    return NextResponse.json({ success: false, error: "Could not prepare Zoho reconnection. Try again shortly." }, { status: 503 });
+  }
 }

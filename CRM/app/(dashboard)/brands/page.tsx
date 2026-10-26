@@ -1,4 +1,5 @@
 "use client";
+import "./brands-mobile.css";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -221,7 +222,7 @@ export default function BrandsPage() {
           .brand-actions { justify-content: space-between; flex-wrap: wrap; }
         }
       `}</style>
-      <div className="card" style={{ padding: "10px 12px" }}>
+      <div className="card brand-filter-panel" style={{ padding: "10px 12px" }}>
         <div className="brand-toolbar">
           <div style={{ position: "relative" }}>
             <Search
@@ -236,7 +237,8 @@ export default function BrandsPage() {
             />
             <input
               className="form-input"
-              placeholder="Search brand name, country, category..."
+              aria-label="Search medical brands"
+              placeholder="Search brands..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{ paddingLeft: 32 }}
@@ -300,7 +302,7 @@ export default function BrandsPage() {
               title="Fetch all categories and brands from fastonmed.com"
             >
               <RefreshCw size={13} style={{ animation: syncingWoo ? "spin 1s linear infinite" : "none" }} />
-              <span>{syncingWoo ? "Fetching..." : "Fetch WooCommerce"}</span>
+              <span>{syncingWoo ? "Fetching..." : "Refresh brands"}</span>
             </button>
 
             <button
@@ -318,7 +320,7 @@ export default function BrandsPage() {
       {/* Showing count */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>
-          Showing <strong>{filtered.length}</strong> medical equipment brands available in the CRM
+          <strong>{filtered.length}</strong> medical brands
         </p>
       </div>
 
